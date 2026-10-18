@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Atención médica{% endblock %}
+
+{% block contenido %}
+<h1>Atención médica</h1>
+<p class="subtitulo">Visitas médicas registradas y pacientes por atender.</p>
+
+{% if puede(seg.REGISTRAR_VISITAS) %}
+<div class="tarjeta">
+    <h2>Solicitudes asignadas por atender</h2>
+    {% if por_atender %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Horario</th><th>Paciente</th><th>Especialidad</th><th>Médico</th><th>Motivo</th><th></th></tr></thead>
+            <tbody>
+                {% for s in por_atender %}
+                <tr>
+                    <td>{{ s.horario|fecha }}</td>
+                    <td>{{ s.paciente }}</td>
+                    <td>{{ s.especialidad }}</td>
+                    <td>{{ s.medico }}</td>
+                    <td>{{ s.motivo }}</td>
+                    <td><a class="boton pequeno" href="/visitas/nueva?solicitud_id={{ s.id }}">Atender</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No hay solicitudes asignadas pendientes de atender.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="tarjeta">
+    <h2>Visitas registradas</h2>
+    {% if visitas %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Fecha</th><th>Paciente</th><th>Médico</th><th>Especialidad</th><th>Diagnóstico</th><th></th></tr></thead>
+            <tbody>
+                {% for v in visitas %}
+                <tr>
+                    <td>{{ v.fecha|fecha }}</td>
+                    <td>{{ nombres.get(v.paciente_id, v.paciente_id) }}</td>
+                    <td>{{ v.medico }}</td>
+                    <td>{{ v.especialidad }}</td>
+                    <td>{{ v.diagnostico }}</td>
+                    <td><a class="boton pequeno secundario" href="/visitas/{{ v.id }}">Ver</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">Todavía no hay visitas registradas.</p>
+    {% endif %}
+</div>
+{% endblock %}

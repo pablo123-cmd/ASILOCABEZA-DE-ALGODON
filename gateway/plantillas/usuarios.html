@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Usuarios{% endblock %}
+
+{% block contenido %}
+<div class="fila-titulo">
+    <div>
+        <h1>Usuarios y roles</h1>
+        <p class="subtitulo">Cada rol solo puede usar los módulos que le corresponden.</p>
+    </div>
+    <a class="boton" href="/usuarios/nuevo">+ Nuevo usuario</a>
+</div>
+
+<div class="tarjeta">
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td>{{ u.usuario }}</td>
+                    <td>{{ u.nombre }}</td>
+                    <td>{{ u.rol }}</td>
+                    <td><span class="etiqueta {{ 'Atendida' if u.activo else 'Cancelada' }}">{{ "Activo" if u.activo else "Desactivado" }}</span></td>
+                    <td><a class="boton pequeno secundario" href="/usuarios/{{ u.id }}">Editar</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

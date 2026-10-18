@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo, estado %}
+{% block titulo %}Ficha médica de {{ paciente.nombre }}{% endblock %}
+
+{% block contenido %}
+<h1>Ficha médica</h1>
+<p class="subtitulo">
+    <a href="/pacientes/{{ paciente.id }}">{{ paciente.nombre }}</a> · {{ paciente.edad }} años ·
+    Habitación {{ paciente.habitacion }} · Ingreso: {{ paciente.fecha_ingreso|fecha }}
+</p>
+
+<div class="tarjeta">
+    <h2>Antecedentes</h2>
+    <p><strong>Motivo de ingreso al asilo:</strong> {{ paciente.motivo_ingreso or "—" }}</p>
+
+    {% if puede(seg.EDITAR_FICHA) %}
+    <form method="post" action="/pacientes/{{ paciente.id }}/ficha">
+        <div class="formulario">
+            {{ campo("tipo_sangre", "Tipo de sangre", ficha, errores) }}
+            {{ campo("alergias", "Alergias", ficha, errores) }}
+            {{ campo("psicopatologia", "Psicopatología que padece", ficha, errores, tipo="textarea") }}
+            {{ campo("enfermedades_cronicas", "Enfermedades crónicas", ficha, errores, tipo="textarea") }}
+            {{ campo("medicamentos_base", "Medicamentos de base (de cajón)", ficha, errores, tipo="textarea") }}
+            {{ campo("observaciones", "Observaciones", ficha, errores, tipo="textarea") }}
+        </div>
+        <button class="boton" type="submit">Guardar ficha</button>
+    </form>
+    {% else %}
+    <dl class="datos">
+        <dt>Tipo de sangre</dt><dd>{{ ficha.tipo_sangre or "—" }}</dd>
+        <dt>Alergias</dt><dd>{{ ficha.alergias or "—" }}</dd>
+        <dt>Psicopatología</dt><dd>{{ ficha.psicopatologia or "—" }}</dd>
+        <dt>Enfermedades crónicas</dt><dd>{{ ficha.enfermedades_cronicas or "—" }}</dd>
+        <dt>Medicamentos de base</dt><dd>{{ ficha.medicamentos_base or "—" }}</dd>
+        <dt>Observaciones</dt><dd>{{ ficha.observaciones or "—" }}</dd>
+    </dl>
+    {% endif %}
+</div>
+
+<h2>Historial médico</h2>
+
+{% for v in historial %}
+<div class="tarjeta">
+    <div class="fila-titulo">
+        <h2 style="margin:0">{{ v.fecha|fecha }} · {{ v.especialidad }}</h2>
+        <a class="boton pequeno secundario" href="/visitas/{{ v.id }}">Ver visita</a>
+    </div>
+    <dl class="datos">
+        <dt>Médico tratante</dt><dd>{{ v.medico }} ({{ v.especialidad }})</dd>
+        <dt>Motivo de la visita</dt><dd>{{ v.motivo }}</dd>
+        <dt>Diagnóstico</dt><dd>{{ v.diagnostico }}</dd>
+        <dt>Observaciones</dt><dd>{{ v.observaciones or "—" }}</dd>
+        <dt>Exámenes</dt>
+        <dd>
+            {% for e in v.examenes %}
+            <div>{{ e.examen }} {{ estado(e.estado) }}{% if e.resultado %} — <em>{{ e.resultado }}</em>{% endif %}</div>
+            {% else %}—{% endfor %}
+        </dd>
+        <dt>Medicamentos</dt>
+        <dd>
+            {% for r in v.recetas %}
+            <div>{{ r.medicamento }} × {{ r.cantidad }} — {{ r.indicaciones }} durante {{ r.duracion }}</div>
+            {% else %}—{% endfor %}
+        </dd>
+    </dl>
+</div>
+{% else %}
+<div class="tarjeta"><p class="vacio">El paciente todavía no tiene visitas médicas registradas.</p></div>
+{% endfor %}
+{% endblock %}

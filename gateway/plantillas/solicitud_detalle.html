@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo, estado %}
+{% set s = solicitud %}
+{% set abierta = s.estado in ("Pendiente", "Asignada") %}
+{% block titulo %}Solicitud #{{ s.id }}{% endblock %}
+
+{% block contenido %}
+<div class="fila-titulo">
+    <div>
+        <h1>Solicitud médica #{{ s.id }} {{ estado(s.estado) }}</h1>
+        <p class="subtitulo">Creada el {{ s.fecha_creacion|fecha }} por {{ s.creada_por }}</p>
+    </div>
+    <div class="acciones" style="margin:0">
+        {% if s.estado == "Asignada" and puede(seg.REGISTRAR_VISITAS) %}
+        <a class="boton" href="/visitas/nueva?solicitud_id={{ s.id }}">Atender: registrar visita</a>
+        {% endif %}
+        {% if s.visita_id %}
+        <a class="boton secundario" href="/visitas/{{ s.visita_id }}">Ver visita médica</a>
+        {% endif %}
+        {% if puede(seg.LEER_FICHA) %}
+        <a class="boton secundario" href="/pacientes/{{ s.paciente_id }}/ficha">Ficha médica del paciente</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="tarjeta">
+    <dl class="datos">
+        <dt>Paciente</dt><dd>{{ s.paciente }}</dd>
+        <dt>Especialidad</dt><dd>{{ s.especialidad }}</dd>
+        <dt>Motivo</dt><dd>{{ s.motivo }}</dd>
+        <dt>Enfermero(a)</dt><dd>{{ s.enfermero or "Sin asignar" }}</dd>
+        <dt>Médico asignado</dt><dd>{{ s.medico or "Sin asignar" }}</dd>
+        <dt>Horario</dt><dd>{{ s.horario|fecha }}</dd>
+    </dl>
+</div>
+
+{% if abierta %}
+<div class="columnas">
+    {% if puede(seg.ASIGNAR_MEDICO) %}
+    <form class="tarjeta" method="post" action="/solicitudes/{{ s.id }}/asignacion">
+        <h2>Asignar médico y horario</h2>
+        {% if medicos %}
+        {{ campo("medico_id", "Médico de " ~ s.especialidad, {"medico_id": s.medico_id}, errores,
+                 tipo="select", requerido=True, opciones=opciones(medicos)) }}
+        {{ campo("horario", "Fecha y hora de la cita", {"horario": s.horario}, errores,
+                 tipo="datetime-local", requerido=True) }}
+        {{ campo("enfermero_id", "Enfermero(a) acompañante", {"enfermero_id": s.enfermero_id}, errores,
+                 tipo="select", opciones=opciones(enfermeros), vacio="Mantener el actual") }}
+        <button class="boton" type="submit">Asignar</button>
+        {% else %}
+        <p class="aviso info">No hay médicos registrados de {{ s.especialidad }}.
+            <a href="/catalogos/medicos">Registrar un médico</a>.</p>
+        {% endif %}
+    </form>
+    {% endif %}
+
+    {% if puede(seg.ASIGNAR_ENFERMERO) %}
+    <form class="tarjeta" method="post" action="/solicitudes/{{ s.id }}/enfermero">
+        <h2>Enfermero(a) acompañante</h2>
+        {{ campo("enfermero_id", "Enfermero(a)", {"enfermero_id": s.enfermero_id}, errores,
+                 tipo="select", requerido=True, opciones=opciones(enfermeros)) }}
+        <button class="boton" type="submit">Asignar enfermero(a)</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if puede(seg.CANCELAR_SOLICITUDES) %}
+<form method="post" action="/solicitudes/{{ s.id }}/cancelar"
+      onsubmit="return confirm('¿Cancelar esta solicitud? No se puede deshacer.')">
+    <button class="boton peligro" type="submit">Cancelar solicitud</button>
+</form>
+{% endif %}
+{% endif %}
+
+<p><a href="/solicitudes">← Volver a las solicitudes</a></p>
+{% endblock %}

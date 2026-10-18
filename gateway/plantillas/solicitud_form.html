@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo %}
+{% block titulo %}Nueva solicitud médica{% endblock %}
+
+{% block contenido %}
+<h1>Nueva solicitud médica</h1>
+<p class="subtitulo">
+    Indique a qué especialidad se refiere al paciente. La fundación asignará el médico y el
+    horario, y se enviará un correo al familiar.
+</p>
+
+<form class="tarjeta" method="post" action="/solicitudes/nueva">
+    <div class="formulario">
+        {{ campo("paciente_id", "Paciente", valores, errores, tipo="select", requerido=True,
+                 opciones=opciones(pacientes)) }}
+        {{ campo("especialidad", "Especialidad", valores, errores, tipo="select", requerido=True,
+                 opciones=opciones(especialidades, "nombre")) }}
+        {{ campo("enfermero_id", "Enfermero(a) acompañante", valores, errores, tipo="select",
+                 opciones=opciones(enfermeros),
+                 vacio="Asignar después") }}
+        {{ campo("motivo", "Motivo de la referencia", valores, errores, tipo="textarea", requerido=True) }}
+    </div>
+
+    <div class="acciones">
+        <button class="boton" type="submit">Crear solicitud</button>
+        <a class="boton secundario" href="/solicitudes">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

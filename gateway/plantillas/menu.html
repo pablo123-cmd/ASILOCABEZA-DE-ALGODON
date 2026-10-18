@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio{% endblock %}
+
+{% block contenido %}
+<h1>Bienvenido(a), {{ usuario.nombre }}</h1>
+<p class="subtitulo">Estos son los módulos disponibles para su rol ({{ usuario.rol }}).</p>
+
+<div class="modulos">
+    {% for modulo in modulos %}
+    <div class="modulo">
+        <div class="icono" aria-hidden="true">{{ modulo.icono }}</div>
+        <h2>{{ modulo.titulo }}</h2>
+        <p>{{ modulo.descripcion }}</p>
+        <a class="boton ancho" href="{{ modulo.ruta }}">Entrar</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

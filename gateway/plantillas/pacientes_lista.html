@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block titulo %}Pacientes{% endblock %}
+
+{% block contenido %}
+<div class="fila-titulo">
+    <div>
+        <h1>Pacientes</h1>
+        <p class="subtitulo">Internos registrados en el asilo.</p>
+    </div>
+    {% if puede(seg.EDITAR_PACIENTES) %}
+    <a class="boton" href="/pacientes/nuevo">+ Registrar paciente</a>
+    {% endif %}
+</div>
+
+<div class="tarjeta">
+    <form class="filtros" method="get" action="/pacientes" role="search">
+        <div class="campo">
+            <label for="buscar">Buscar por nombre o habitación</label>
+            <input id="buscar" name="buscar" value="{{ buscar }}" placeholder="Ejemplo: López o A-02">
+        </div>
+        <button class="boton" type="submit">Buscar</button>
+        {% if buscar %}<a class="boton secundario" href="/pacientes">Ver todos</a>{% endif %}
+    </form>
+</div>
+
+<div class="tarjeta">
+    {% if pacientes %}
+    <div class="tabla-scroll">
+        <table>
+            <thead>
+                <tr><th>Nombre</th><th>Edad</th><th>Habitación</th><th>Ingreso</th><th>Familiar</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for p in pacientes %}
+                <tr>
+                    <td><a href="/pacientes/{{ p.id }}">{{ p.nombre }}</a></td>
+                    <td>{{ p.edad }}</td>
+                    <td>{{ p.habitacion }}</td>
+                    <td>{{ p.fecha_ingreso|fecha }}</td>
+                    <td>{{ p.familiar_nombre or "—" }}</td>
+                    <td>
+                        <div class="acciones" style="margin:0">
+                            <a class="boton pequeno secundario" href="/pacientes/{{ p.id }}">Ver</a>
+                            {% if puede(seg.EDITAR_PACIENTES) %}
+                            <a class="boton pequeno secundario" href="/pacientes/{{ p.id }}/editar">Editar</a>
+                            {% endif %}
+                            {% if puede(seg.LEER_FICHA) %}
+                            <a class="boton pequeno secundario" href="/pacientes/{{ p.id }}/ficha">Ficha médica</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No se encontraron pacientes{% if buscar %} con «{{ buscar }}»{% endif %}.</p>
+    {% endif %}
+</div>
+{% endblock %}

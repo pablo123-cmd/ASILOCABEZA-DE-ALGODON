@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Correos a familiares{% endblock %}
+
+{% block contenido %}
+<h1>Correos a familiares</h1>
+<p class="subtitulo">
+    Avisos enviados cuando se crea una solicitud médica y cuando la fundación asigna el médico.
+    Si el servidor de correo no está configurado, el aviso queda registrado como «Simulado».
+</p>
+
+{% for c in correos %}
+<div class="tarjeta">
+    <div class="fila-titulo">
+        <h2 style="margin:0">{{ c.asunto }}</h2>
+        <span>{{ c.fecha|fecha }}</span>
+    </div>
+    <p><strong>Para:</strong> {{ c.destinatario or "—" }} · <strong>Estado:</strong> {{ c.estado }} ·
+       <a href="/solicitudes/{{ c.solicitud_id }}">Solicitud #{{ c.solicitud_id }}</a></p>
+    <pre style="white-space:pre-wrap;font-family:inherit;margin:0">{{ c.cuerpo }}</pre>
+</div>
+{% else %}
+<div class="tarjeta"><p class="vacio">Todavía no se han enviado correos.</p></div>
+{% endfor %}
+{% endblock %}

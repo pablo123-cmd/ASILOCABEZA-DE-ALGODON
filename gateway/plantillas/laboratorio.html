@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "macros.html" import estado as etiqueta_estado %}
+{% block titulo %}Laboratorio{% endblock %}
+
+{% block contenido %}
+<h1>Laboratorio clínico</h1>
+<p class="subtitulo">Identifique al paciente del asilo, realice los exámenes solicitados y registre el resultado.</p>
+
+<div class="tarjeta">
+    <form class="filtros" method="get" action="/laboratorio">
+        <div class="campo">
+            <label for="paciente_id">Paciente</label>
+            <select id="paciente_id" name="paciente_id">
+                <option value="">Todos</option>
+                {% for p in pacientes %}
+                <option value="{{ p.id }}" {% if p.id|string == paciente_id %}selected{% endif %}>{{ p.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="campo">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="Solicitado" {% if estado == "Solicitado" %}selected{% endif %}>Solicitados</option>
+                <option value="Completado" {% if estado == "Completado" %}selected{% endif %}>Completados</option>
+                <option value="todos" {% if not estado %}selected{% endif %}>Todos</option>
+            </select>
+        </div>
+        <button class="boton" type="submit">Filtrar</button>
+    </form>
+</div>
+
+{% for e in examenes %}
+<div class="tarjeta">
+    <div class="fila-titulo">
+        <h2 style="margin:0">{{ e.examen }} {{ etiqueta_estado(e.estado) }}</h2>
+        <span>{{ nombres.get(e.paciente_id, e.paciente_id) }} · solicitado {{ e.fecha_solicitud|fecha }}</span>
+    </div>
+    <p><strong>Indicaciones:</strong> {{ e.indicaciones or "—" }} · <a href="/visitas/{{ e.visita_id }}">Visita #{{ e.visita_id }}</a></p>
+
+    {% if e.estado == "Solicitado" and puede(seg.REGISTRAR_RESULTADOS) %}
+    <form method="post" action="/laboratorio/{{ e.id }}/resultado">
+        <div class="campo">
+            <label for="resultado-{{ e.id }}">Resultado <span class="obligatorio">*</span></label>
+            <textarea id="resultado-{{ e.id }}" name="resultado" required></textarea>
+        </div>
+        <button class="boton" type="submit">Registrar resultado</button>
+    </form>
+    {% elif e.resultado %}
+    <p><strong>Resultado ({{ e.fecha_resultado|fecha }}):</strong> {{ e.resultado }}</p>
+    <p><strong>Costo:</strong> {{ e.costo|q }}</p>
+    {% endif %}
+</div>
+{% else %}
+<div class="tarjeta"><p class="vacio">No hay exámenes con estos filtros.</p></div>
+{% endfor %}
+{% endblock %}

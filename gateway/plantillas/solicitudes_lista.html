@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "macros.html" import estado as etiqueta_estado %}
+{% block titulo %}Solicitudes médicas{% endblock %}
+
+{% block contenido %}
+<div class="fila-titulo">
+    <div>
+        <h1>Solicitudes médicas</h1>
+        <p class="subtitulo">Referencias del médico general a los especialistas de la fundación.</p>
+    </div>
+    {% if puede(seg.CREAR_SOLICITUDES) %}
+    <a class="boton" href="/solicitudes/nueva">+ Nueva solicitud</a>
+    {% endif %}
+</div>
+
+<div class="tarjeta">
+    <form class="filtros" method="get" action="/solicitudes">
+        <div class="campo">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">Todos</option>
+                {% for e in estados %}
+                <option value="{{ e }}" {% if e == estado %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="boton" type="submit">Filtrar</button>
+    </form>
+</div>
+
+<div class="tarjeta">
+    {% if solicitudes %}
+    <div class="tabla-scroll">
+        <table>
+            <thead>
+                <tr><th>#</th><th>Paciente</th><th>Especialidad</th><th>Motivo</th><th>Enfermero(a)</th><th>Médico y horario</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+                {% for s in solicitudes %}
+                <tr>
+                    <td><a href="/solicitudes/{{ s.id }}">{{ s.id }}</a></td>
+                    <td>{{ s.paciente }}</td>
+                    <td>{{ s.especialidad }}</td>
+                    <td>{{ s.motivo }}</td>
+                    <td>{{ s.enfermero or "—" }}</td>
+                    <td>{% if s.medico %}{{ s.medico }}<br>{{ s.horario|fecha }}{% else %}—{% endif %}</td>
+                    <td>{{ etiqueta_estado(s.estado) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No hay solicitudes{% if estado %} en estado {{ estado }}{% endif %}.</p>
+    {% endif %}
+</div>
+{% endblock %}

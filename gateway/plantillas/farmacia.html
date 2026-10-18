@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "macros.html" import estado as etiqueta_estado %}
+{% block titulo %}Farmacia{% endblock %}
+
+{% block contenido %}
+<h1>Farmacia</h1>
+<p class="subtitulo">Medicamentos indicados por los médicos. Al entregarlos, el costo se asigna a la visita médica.</p>
+
+<div class="tarjeta">
+    <form class="filtros" method="get" action="/farmacia">
+        <div class="campo">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="Pendiente de entrega" {% if estado == "Pendiente de entrega" %}selected{% endif %}>Pendientes de entrega</option>
+                <option value="Entregado" {% if estado == "Entregado" %}selected{% endif %}>Entregados</option>
+                <option value="todos" {% if not estado %}selected{% endif %}>Todos</option>
+            </select>
+        </div>
+        <button class="boton" type="submit">Filtrar</button>
+    </form>
+</div>
+
+<div class="tarjeta">
+    {% if recetas %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Paciente</th><th>Medicamento</th><th>Cantidad</th><th>Cómo tomarlo</th><th>Duración</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for r in recetas %}
+                <tr>
+                    <td>{{ nombres.get(r.paciente_id, r.paciente_id) }}</td>
+                    <td>{{ r.medicamento }}</td>
+                    <td>{{ r.cantidad }}</td>
+                    <td>{{ r.indicaciones }}</td>
+                    <td>{{ r.duracion }}</td>
+                    <td>{{ etiqueta_estado(r.estado) }}{% if r.costo is not none %}<br><small>{{ r.costo|q }}</small>{% endif %}</td>
+                    <td>
+                        {% if r.estado == "Pendiente de entrega" and puede(seg.ENTREGAR_MEDICAMENTOS) %}
+                        <form method="post" action="/farmacia/{{ r.id }}/entregar">
+                            <button class="boton pequeno" type="submit">Registrar entrega</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No hay medicamentos con este estado.</p>
+    {% endif %}
+</div>
+
+<div class="tarjeta">
+    <h2>Existencias</h2>
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Medicamento</th><th>Presentación</th><th class="numero">Precio unitario</th><th class="numero">Existencia</th></tr></thead>
+            <tbody>
+                {% for m in medicamentos %}
+                <tr>
+                    <td>{{ m.nombre }}</td>
+                    <td>{{ m.presentacion }}</td>
+                    <td class="numero">{{ m.precio_unitario|q }}</td>
+                    <td class="numero">{{ m.existencia }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

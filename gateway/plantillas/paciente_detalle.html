@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "macros.html" import estado %}
+{% block titulo %}{{ paciente.nombre }}{% endblock %}
+
+{% block contenido %}
+<div class="fila-titulo">
+    <div>
+        <h1>{{ paciente.nombre }}</h1>
+        <p class="subtitulo">Paciente #{{ paciente.id }} · Habitación {{ paciente.habitacion }}</p>
+    </div>
+    <div class="acciones" style="margin:0">
+        {% if puede(seg.EDITAR_PACIENTES) %}
+        <a class="boton secundario" href="/pacientes/{{ paciente.id }}/editar">Editar datos</a>
+        {% endif %}
+        {% if puede(seg.LEER_FICHA) %}
+        <a class="boton secundario" href="/pacientes/{{ paciente.id }}/ficha">Ficha e historial médico</a>
+        {% endif %}
+        {% if puede(seg.CREAR_SOLICITUDES) %}
+        <a class="boton" href="/solicitudes/nueva?paciente_id={{ paciente.id }}">Nueva solicitud médica</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="columnas">
+    <div class="tarjeta">
+        <h2>Datos generales</h2>
+        <dl class="datos">
+            <dt>Edad</dt><dd>{{ paciente.edad }} años</dd>
+            <dt>Habitación</dt><dd>{{ paciente.habitacion }}</dd>
+            <dt>Fecha de ingreso</dt><dd>{{ paciente.fecha_ingreso|fecha }}</dd>
+            <dt>Motivo de ingreso</dt><dd>{{ paciente.motivo_ingreso or "—" }}</dd>
+        </dl>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Familiar responsable</h2>
+        <dl class="datos">
+            <dt>Nombre</dt><dd>{{ paciente.familiar_nombre or "—" }}</dd>
+            <dt>Teléfono</dt><dd>{{ paciente.familiar_telefono or "—" }}</dd>
+            <dt>Correo</dt><dd>{{ paciente.familiar_correo or "—" }}</dd>
+        </dl>
+    </div>
+</div>
+
+{% if puede(seg.LEER_SOLICITUDES) %}
+<div class="tarjeta">
+    <h2>Solicitudes médicas</h2>
+    {% if solicitudes %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>#</th><th>Fecha</th><th>Especialidad</th><th>Motivo</th><th>Estado</th></tr></thead>
+            <tbody>
+                {% for s in solicitudes %}
+                <tr>
+                    <td><a href="/solicitudes/{{ s.id }}">{{ s.id }}</a></td>
+                    <td>{{ s.fecha_creacion|fecha }}</td>
+                    <td>{{ s.especialidad }}</td>
+                    <td>{{ s.motivo }}</td>
+                    <td>{{ estado(s.estado) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">El paciente no tiene solicitudes médicas.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<a href="/pacientes">← Volver a la lista de pacientes</a>
+{% endblock %}

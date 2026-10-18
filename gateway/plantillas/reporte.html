@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block titulo %}{{ reporte.titulo }}{% endblock %}
+
+{% block contenido %}
+<p class="no-imprimir"><a href="/reportes">← Reportes</a></p>
+<h1>{{ reporte.titulo }}</h1>
+<p class="subtitulo">
+    {{ reporte.descripcion }}
+    {% if desde or hasta %}<br>Periodo: {{ desde|fecha if desde else "inicio" }} al {{ hasta|fecha if hasta else "hoy" }}{% endif %}
+    <br>Generado el {{ generado.strftime("%d/%m/%Y %H:%M") }} por {{ usuario.nombre }}
+</p>
+
+<div class="tarjeta no-imprimir">
+    <form class="filtros" method="get" action="/reportes/{{ clave }}">
+        {% if not reporte.sin_paciente %}
+        <div class="campo">
+            <label for="paciente_id">Paciente{% if reporte.requiere_paciente %} <span class="obligatorio">*</span>{% endif %}</label>
+            <select id="paciente_id" name="paciente_id" {% if reporte.requiere_paciente %}required{% endif %}>
+                <option value="">{{ "Seleccione..." if reporte.requiere_paciente else "Todos" }}</option>
+                {% for p in pacientes %}
+                <option value="{{ p.id }}" {% if p.id|string == paciente_id %}selected{% endif %}>{{ p.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <div class="campo"><label for="desde">Desde</label><input id="desde" name="desde" type="date" value="{{ desde }}"></div>
+        <div class="campo"><label for="hasta">Hasta</label><input id="hasta" name="hasta" type="date" value="{{ hasta }}"></div>
+        <button class="boton" type="submit">Generar</button>
+        <button class="boton secundario" type="button" onclick="window.print()">Imprimir / PDF</button>
+    </form>
+</div>
+
+{% if reporte.requiere_paciente and not paciente_id %}
+<div class="aviso info">Seleccione un paciente para generar el reporte.</div>
+{% endif %}
+
+{% for s in secciones %}
+<div class="tarjeta">
+    <h2>{{ s.titulo }}</h2>
+    {% if s.filas %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr>{% for c in s.columnas %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for fila in s.filas %}
+                <tr>{% for valor in fila %}<td>{{ valor }}</td>{% endfor %}</tr>
+                {% endfor %}
+            </tbody>
+            {% if s.total %}
+            <tfoot><tr><td colspan="{{ s.columnas|length }}" class="numero">Total: {{ s.total }}</td></tr></tfoot>
+            {% endif %}
+        </table>
+    </div>
+    {% elif s.total %}
+    <p class="cifra"><span class="valor">{{ s.total }}</span></p>
+    {% else %}
+    <p class="vacio">Sin información para los filtros seleccionados.</p>
+    {% endif %}
+</div>
+{% else %}
+{% if not (reporte.requiere_paciente and not paciente_id) %}
+<div class="tarjeta"><p class="vacio">Sin información para los filtros seleccionados.</p></div>
+{% endif %}
+{% endfor %}
+{% endblock %}

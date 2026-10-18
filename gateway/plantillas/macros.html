@@ -1,0 +1,33 @@
+{# Campo de formulario con su etiqueta y su mensaje de error. #}
+{% macro campo(nombre, etiqueta, valores, errores, tipo="text", requerido=False,
+               opciones=None, min=None, max=None, paso=None, ayuda=None, completo=False,
+               vacio="Seleccione...") %}
+{% set valor = valores.get(nombre, "") if valores else "" %}
+{% set valor = "" if valor is none else valor %}
+<div class="campo{% if completo or tipo == 'textarea' %} completo{% endif %}{% if errores.get(nombre) %} con-error{% endif %}">
+    <label for="{{ nombre }}">{{ etiqueta }}{% if requerido %} <span class="obligatorio" title="Obligatorio">*</span>{% endif %}</label>
+
+    {% if tipo == "select" %}
+    <select id="{{ nombre }}" name="{{ nombre }}" {% if requerido %}required{% endif %}>
+        <option value="">{{ vacio }}</option>
+        {% for opcion_valor, opcion_texto in opciones %}
+        <option value="{{ opcion_valor }}" {% if opcion_valor|string == valor|string %}selected{% endif %}>{{ opcion_texto }}</option>
+        {% endfor %}
+    </select>
+    {% elif tipo == "textarea" %}
+    <textarea id="{{ nombre }}" name="{{ nombre }}" {% if requerido %}required{% endif %}>{{ valor }}</textarea>
+    {% else %}
+    <input id="{{ nombre }}" name="{{ nombre }}" type="{{ tipo }}" value="{{ valor }}"
+           {% if requerido %}required{% endif %}
+           {% if tipo == "number" %}step="{{ paso or '0.01' }}"{% endif %}
+           {% if min is not none %}min="{{ min }}"{% endif %}
+           {% if max is not none %}max="{{ max }}"{% endif %}>
+    {% endif %}
+
+    {% if errores.get(nombre) %}<div class="error-campo">{{ errores[nombre] }}</div>{% endif %}
+    {% if ayuda %}<div class="ayuda">{{ ayuda }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{# Etiqueta de color según el estado. #}
+{% macro estado(texto) %}<span class="etiqueta {{ texto.split(' ')[0] }}">{{ texto }}</span>{% endmacro %}

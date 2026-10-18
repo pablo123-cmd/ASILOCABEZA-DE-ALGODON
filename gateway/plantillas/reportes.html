@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Reportes{% endblock %}
+
+{% block contenido %}
+<h1>Reportes</h1>
+<p class="subtitulo">Informes disponibles para su rol.</p>
+
+<div class="modulos">
+    {% for clave, r in reportes.items() %}
+    <div class="modulo">
+        <h2>{{ r.titulo }}</h2>
+        <p>{{ r.descripcion }}</p>
+        <a class="boton ancho" href="/reportes/{{ clave }}">Generar</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

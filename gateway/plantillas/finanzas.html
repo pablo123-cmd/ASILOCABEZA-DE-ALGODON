@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titulo %}Finanzas{% endblock %}
+
+{% block contenido %}
+<h1>Entradas, salidas y manejo de caja</h1>
+<p class="subtitulo">Resumen financiero del asilo{% if desde or hasta %} del {{ desde|fecha }} al {{ hasta|fecha }}{% endif %}.</p>
+
+<div class="tarjeta no-imprimir">
+    <form class="filtros" method="get" action="/finanzas">
+        <div class="campo"><label for="desde">Desde</label><input id="desde" name="desde" type="date" value="{{ desde }}"></div>
+        <div class="campo"><label for="hasta">Hasta</label><input id="hasta" name="hasta" type="date" value="{{ hasta }}"></div>
+        <button class="boton" type="submit">Ver periodo</button>
+        {% if desde or hasta %}<a class="boton secundario" href="/finanzas">Todo</a>{% endif %}
+    </form>
+</div>
+
+<div class="tarjeta">
+    <h2>Caja</h2>
+    <div class="cifras">
+        <div class="cifra"><div class="nombre">Donaciones</div><div class="valor">{{ resumen.entradas.donaciones|q }}</div></div>
+        <div class="cifra"><div class="nombre">Cuotas familiares</div><div class="valor">{{ resumen.entradas.cuotas|q }}</div></div>
+        <div class="cifra"><div class="nombre">Cobros de citas</div><div class="valor">{{ resumen.entradas.cobros|q }}</div></div>
+        <div class="cifra"><div class="nombre">Gastos</div><div class="valor">{{ resumen.salidas.gastos|q }}</div></div>
+        <div class="cifra"><div class="nombre">Pagos a la fundación</div><div class="valor">{{ resumen.salidas.pagos_fundacion|q }}</div></div>
+        <div class="cifra"><div class="nombre">Balance (entradas − salidas)</div><div class="valor">{{ resumen.balance|q }}</div></div>
+    </div>
+</div>
+
+<div class="tarjeta">
+    <h2>Cuenta con la fundación</h2>
+    <div class="cifras">
+        <div class="cifra"><div class="nombre">Servicios recibidos (con descuento)</div><div class="valor">{{ resumen.fundacion.total_cargos|q }}</div></div>
+        <div class="cifra"><div class="nombre">Pagado</div><div class="valor">{{ resumen.fundacion.pagado|q }}</div></div>
+        <div class="cifra"><div class="nombre">Saldo pendiente</div><div class="valor">{{ resumen.fundacion.saldo|q }}</div></div>
+    </div>
+</div>
+
+<div class="modulos">
+    <div class="modulo">
+        <h2>Cuentas de pacientes</h2>
+        <p>Costos cargados al familiar y citas pendientes de pago.</p>
+        <a class="boton ancho" href="/finanzas/cuentas">Abrir</a>
+    </div>
+    {% for clave, m in movimientos.items() %}
+    <div class="modulo">
+        <h2>{{ m.titulo }}</h2>
+        <p>{{ m.tipo }} de caja</p>
+        <a class="boton ancho" href="/finanzas/{{ clave }}">Abrir</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

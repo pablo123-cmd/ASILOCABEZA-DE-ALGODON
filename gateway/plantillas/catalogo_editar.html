@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo as campo_form %}
+{% block titulo %}Editar {{ catalogo.titulo|lower }}{% endblock %}
+
+{% block contenido %}
+<p><a href="/catalogos/{{ tipo }}">← {{ catalogo.titulo }}</a></p>
+<h1>Editar: {{ registro.nombre }}</h1>
+
+<form class="tarjeta" method="post" action="/catalogos/{{ tipo }}/{{ registro.id }}">
+    <div class="formulario">
+        {% for c in campos %}
+        {{ campo_form(c.nombre, c.etiqueta, registro, errores, tipo=c.tipo or "text", requerido=c.requerido,
+                      opciones=c.opciones, min=0 if c.tipo == "number" else none, paso=c.paso) }}
+        {% endfor %}
+    </div>
+    <div class="acciones">
+        <button class="boton" type="submit">Guardar cambios</button>
+        <a class="boton secundario" href="/catalogos/{{ tipo }}">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

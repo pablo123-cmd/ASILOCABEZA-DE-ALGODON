@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo as campo_form %}
+{% block titulo %}{{ movimiento.titulo }}{% endblock %}
+
+{% block contenido %}
+<p><a href="/finanzas">← Finanzas</a></p>
+<h1>{{ movimiento.titulo }}</h1>
+<p class="subtitulo">{{ movimiento.tipo }} de caja.</p>
+
+{% if fundacion %}
+<div class="tarjeta">
+    <div class="cifras">
+        <div class="cifra"><div class="nombre">Servicios recibidos</div><div class="valor">{{ fundacion.total_cargos|q }}</div></div>
+        <div class="cifra"><div class="nombre">Pagado</div><div class="valor">{{ fundacion.pagado|q }}</div></div>
+        <div class="cifra"><div class="nombre">Saldo pendiente</div><div class="valor">{{ fundacion.saldo|q }}</div></div>
+    </div>
+</div>
+{% endif %}
+
+{% if not movimiento.solo_lectura %}
+<form class="tarjeta" method="post" action="/finanzas/{{ tipo }}">
+    <h2>Registrar</h2>
+    <div class="formulario">
+        {% for c in campos %}
+        {{ campo_form(c.nombre, c.etiqueta, valores, errores, tipo=c.tipo or "text", requerido=c.requerido,
+                      opciones=c.opciones, min=0.01 if c.moneda else none,
+                      ayuda="Si se deja vacía se usa la fecha de hoy." if c.tipo == "date" else none) }}
+        {% endfor %}
+    </div>
+    <button class="boton" type="submit">Guardar</button>
+</form>
+{% else %}
+<div class="aviso info">Los cobros se registran desde la <a href="/finanzas/cuentas">cuenta de cada paciente</a>.</div>
+{% endif %}
+
+<div class="tarjeta">
+    <form class="filtros no-imprimir" method="get" action="/finanzas/{{ tipo }}" style="margin-bottom:16px">
+        <div class="campo"><label for="desde">Desde</label><input id="desde" name="desde" type="date" value="{{ desde }}"></div>
+        <div class="campo"><label for="hasta">Hasta</label><input id="hasta" name="hasta" type="date" value="{{ hasta }}"></div>
+        <button class="boton" type="submit">Filtrar</button>
+    </form>
+
+    {% if registros %}
+    <div class="tabla-scroll">
+        <table>
+            <thead>
+                <tr>
+                    {% for c in campos %}<th{% if c.moneda %} class="numero"{% endif %}>{{ c.etiqueta }}</th>{% endfor %}
+                    <th>Registrado por</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    {% for c in campos %}
+                    {% set valor = r[c.mostrar] if c.mostrar else r[c.nombre] %}
+                    <td{% if c.moneda %} class="numero"{% endif %}>
+                        {%- if c.moneda %}{{ valor|q }}{% elif c.tipo == "date" %}{{ valor|fecha }}{% else %}{{ valor or "—" }}{% endif -%}
+                    </td>
+                    {% endfor %}
+                    <td>{{ r.registrado_por }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr><td colspan="{{ campos|length + 1 }}" class="numero">Total: {{ total|q }}</td></tr>
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No hay registros en este periodo.</p>
+    {% endif %}
+</div>
+{% endblock %}

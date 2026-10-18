@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Asilo Cabeza de Algodón{% endblock %} · Asilo Cabeza de Algodón</title>
+    <link rel="stylesheet" href="/estatico/estilos.css">
+</head>
+<body>
+
+{% if usuario %}
+<header class="encabezado">
+    <a class="marca" href="/">👵 Asilo Cabeza de Algodón</a>
+    <div class="sesion">
+        <span>{{ usuario.nombre }} · <strong>{{ usuario.rol }}</strong></span>
+        <a class="salir" href="/salir">Cerrar sesión</a>
+    </div>
+</header>
+
+<nav class="navegacion" aria-label="Módulos">
+    <a href="/">Inicio</a>
+    {% for modulo in modulos %}
+    <a href="{{ modulo.ruta }}">{{ modulo.titulo }}</a>
+    {% endfor %}
+</nav>
+{% endif %}
+
+<main class="{% block clase_principal %}contenedor{% endblock %}">
+
+    {% if ok %}
+    <div class="aviso exito" role="status">✔ {{ ok }}</div>
+    {% endif %}
+
+    {% if error %}
+    <div class="aviso error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    {% block contenido %}{% endblock %}
+</main>
+
+<footer class="pie">Asilo Cabeza de Algodón © 2026 · Sistema de Administración</footer>
+
+</body>
+</html>

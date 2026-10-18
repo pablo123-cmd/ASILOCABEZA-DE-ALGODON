@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesión{% endblock %}
+{% block clase_principal %}login{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <h1>Asilo Cabeza de Algodón</h1>
+    <p class="subtitulo" style="text-align:center">Sistema de Administración</p>
+
+    <form method="post" action="/login">
+        <input type="hidden" name="siguiente" value="{{ siguiente }}">
+
+        <div class="campo">
+            <label for="usuario">Usuario</label>
+            <input id="usuario" name="usuario" value="{{ usuario_escrito or '' }}"
+                   autocomplete="username" required autofocus>
+        </div>
+
+        <div class="campo">
+            <label for="contrasena">Contraseña</label>
+            <input id="contrasena" name="contrasena" type="password"
+                   autocomplete="current-password" required>
+        </div>
+
+        <button class="boton ancho" type="submit">Iniciar sesión</button>
+    </form>
+</div>
+{% endblock %}

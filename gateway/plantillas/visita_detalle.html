@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo, estado %}
+{% set v = visita %}
+{% block titulo %}Visita médica #{{ v.id }}{% endblock %}
+
+{% block contenido %}
+<div class="fila-titulo">
+    <div>
+        <h1>Visita médica #{{ v.id }}</h1>
+        <p class="subtitulo">{{ paciente.nombre }} · {{ v.fecha|fecha }}</p>
+    </div>
+    {% if puede(seg.LEER_FICHA) %}
+    <a class="boton secundario" href="/pacientes/{{ paciente.id }}/ficha">Ficha e historial</a>
+    {% endif %}
+</div>
+
+<div class="tarjeta">
+    <dl class="datos">
+        <dt>Fecha de visita</dt><dd>{{ v.fecha|fecha }}</dd>
+        <dt>Motivo de visita</dt><dd>{{ v.motivo }}</dd>
+        <dt>Médico tratante</dt><dd>{{ v.medico }} — {{ v.especialidad }}</dd>
+        <dt>Enfermero(a)</dt><dd>{{ v.enfermero or "—" }}</dd>
+        <dt>Diagnóstico</dt><dd>{{ v.diagnostico }}</dd>
+        <dt>Observaciones</dt><dd>{{ v.observaciones or "—" }}</dd>
+        <dt>Costo de consulta</dt><dd>{{ v.costo|q }} (precio regular {{ v.precio_regular|q }}, descuento {{ v.descuento_pct }} %)</dd>
+    </dl>
+</div>
+
+<div class="tarjeta">
+    <h2>Exámenes de laboratorio</h2>
+    {% if v.examenes %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Examen</th><th>Indicaciones</th><th>Estado</th><th>Resultado</th><th class="numero">Costo</th></tr></thead>
+            <tbody>
+                {% for e in v.examenes %}
+                <tr>
+                    <td>{{ e.examen }}</td>
+                    <td>{{ e.indicaciones or "—" }}</td>
+                    <td>{{ estado(e.estado) }}</td>
+                    <td>{{ e.resultado or "Pendiente" }}{% if e.fecha_resultado %}<br><small>{{ e.fecha_resultado|fecha }}</small>{% endif %}</td>
+                    <td class="numero">{{ e.costo|q }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No se solicitaron exámenes.</p>
+    {% endif %}
+
+    {% if puede(seg.REGISTRAR_VISITAS) %}
+    <form method="post" action="/visitas/{{ v.id }}/examenes">
+        <div class="formulario">
+            {{ campo("tipo_examen_id", "Solicitar examen", {}, errores, tipo="select", requerido=True,
+                     opciones=opciones(tipos)) }}
+            {{ campo("indicaciones", "Indicaciones para el laboratorio", {}, errores) }}
+        </div>
+        <button class="boton" type="submit">Solicitar examen</button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="tarjeta">
+    <h2>Medicamentos indicados</h2>
+    {% if v.recetas %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Medicamento</th><th>Cantidad</th><th>Cómo tomarlo</th><th>Tiempo de aplicación</th><th>Estado</th><th class="numero">Costo</th></tr></thead>
+            <tbody>
+                {% for r in v.recetas %}
+                <tr>
+                    <td>{{ r.medicamento }}</td>
+                    <td>{{ r.cantidad }}</td>
+                    <td>{{ r.indicaciones }}</td>
+                    <td>{{ r.duracion }}</td>
+                    <td>{{ estado(r.estado) }}</td>
+                    <td class="numero">{{ r.costo|q }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No se indicaron medicamentos.</p>
+    {% endif %}
+
+    {% if puede(seg.REGISTRAR_VISITAS) %}
+    <form method="post" action="/visitas/{{ v.id }}/recetas">
+        <div class="formulario">
+            {{ campo("medicamento_id", "Medicamento", {}, errores, tipo="select", requerido=True,
+                     opciones=opciones(medicamentos)) }}
+            {{ campo("cantidad", "Cantidad", {}, errores, tipo="number", requerido=True, min=1, paso="1") }}
+            {{ campo("indicaciones", "Cómo tomarlo", {}, errores, requerido=True,
+                     ayuda="Ejemplo: una tableta cada 8 horas después de comer.") }}
+            {{ campo("duracion", "Tiempo de aplicación", {}, errores, requerido=True,
+                     ayuda="Ejemplo: 7 días.") }}
+        </div>
+        <button class="boton" type="submit">Indicar medicamento</button>
+    </form>
+    {% endif %}
+</div>
+
+<a href="/visitas">← Volver a atención médica</a>
+{% endblock %}

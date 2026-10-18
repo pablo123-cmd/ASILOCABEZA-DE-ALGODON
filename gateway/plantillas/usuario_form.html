@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo %}
+{% set editando = registro.get("id") %}
+{% block titulo %}{{ "Editar usuario" if editando else "Nuevo usuario" }}{% endblock %}
+
+{% block contenido %}
+<p><a href="/usuarios">← Usuarios</a></p>
+<h1>{{ "Editar usuario: " ~ registro.usuario if editando else "Nuevo usuario" }}</h1>
+
+<form class="tarjeta" method="post" action="{{ '/usuarios/%s' % registro.id if editando else '/usuarios/nuevo' }}">
+    <div class="formulario">
+        {% if not editando %}
+        {{ campo("usuario", "Nombre de usuario", registro, errores, requerido=True,
+                 ayuda="Sin espacios. Se usa para iniciar sesión.") }}
+        {% endif %}
+        {{ campo("nombre", "Nombre completo", registro, errores, requerido=True) }}
+        <div class="campo{% if errores.get('rol') %} con-error{% endif %}">
+            <label for="rol">Rol <span class="obligatorio">*</span></label>
+            <select id="rol" name="rol" required>
+                <option value="">Seleccione...</option>
+                {% for r in roles %}
+                <option value="{{ r }}" {% if r == registro.get("rol") %}selected{% endif %}>{{ r }}</option>
+                {% endfor %}
+            </select>
+            {% if errores.get("rol") %}<div class="error-campo">{{ errores.rol }}</div>{% endif %}
+        </div>
+        {{ campo("contrasena", "Contraseña" if not editando else "Nueva contraseña", {}, errores,
+                 tipo="password", requerido=not editando,
+                 ayuda="Mínimo 8 caracteres." if not editando else "Déjela vacía para conservar la actual.") }}
+        {% if editando %}
+        <div class="campo">
+            <label for="activo">Estado</label>
+            <select id="activo" name="activo">
+                <option value="si" {% if registro.activo %}selected{% endif %}>Activo</option>
+                <option value="no" {% if not registro.activo %}selected{% endif %}>Desactivado (no puede iniciar sesión)</option>
+            </select>
+        </div>
+        {% endif %}
+    </div>
+    <div class="acciones">
+        <button class="boton" type="submit">Guardar</button>
+        <a class="boton secundario" href="/usuarios">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo %}
+{% set editando = paciente.get("id") %}
+{% block titulo %}{{ "Editar paciente" if editando else "Registrar paciente" }}{% endblock %}
+
+{% block contenido %}
+<h1>{{ "Editar paciente" if editando else "Registro de ancianos" }}</h1>
+<p class="subtitulo">Los campos marcados con <span class="obligatorio">*</span> son obligatorios.</p>
+
+<form class="tarjeta" method="post"
+      action="{{ '/pacientes/%s/editar' % paciente.id if editando else '/pacientes/nuevo' }}">
+
+    <h2>Datos del paciente</h2>
+    <div class="formulario">
+        {{ campo("nombre", "Nombre completo", paciente, errores, requerido=True) }}
+        {{ campo("edad", "Edad", paciente, errores, tipo="number", requerido=True, min=EDAD_MINIMA, max=EDAD_MAXIMA, paso="1",
+                 ayuda="Entre %s y %s años." % (EDAD_MINIMA, EDAD_MAXIMA)) }}
+        {{ campo("habitacion", "Habitación", paciente, errores, requerido=True) }}
+        {{ campo("fecha_ingreso", "Fecha de ingreso", paciente, errores, tipo="date",
+                 ayuda="Si se deja vacía se usa la fecha de hoy." if not editando else None) }}
+        {{ campo("motivo_ingreso", "Motivo de ingreso al asilo", paciente, errores, tipo="textarea") }}
+    </div>
+
+    <h2>Familiar responsable</h2>
+    <div class="formulario">
+        {{ campo("familiar_nombre", "Nombre del familiar", paciente, errores) }}
+        {{ campo("familiar_telefono", "Teléfono", paciente, errores, tipo="tel") }}
+        {{ campo("familiar_correo", "Correo electrónico", paciente, errores, tipo="email",
+                 ayuda="Se usa para avisar al familiar de las solicitudes médicas.") }}
+    </div>
+
+    <div class="acciones">
+        <button class="boton" type="submit">{{ "Guardar cambios" if editando else "Registrar paciente" }}</button>
+        <a class="boton secundario" href="{{ '/pacientes/%s' % paciente.id if editando else '/pacientes' }}">Cancelar</a>
+    </div>
+</form>
+{% endblock %}

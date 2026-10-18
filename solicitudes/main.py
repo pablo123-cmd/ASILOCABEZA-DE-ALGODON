@@ -1,564 +1,260 @@
-from fastapi import FastAPI, Form
-from fastapi.responses import HTMLResponse
+from datetime import datetime
+from typing import Literal
+
+from fastapi import Depends
+
+from comun.aplicacion import crear_servicio
+from comun.clientes import obtener_o_none
+from comun.config import URL_MEDICO, URL_PACIENTES
+from comun.correo import enviar_correo
+from comun.errores import conflicto, datos_invalidos, no_encontrado
+from comun.modelos import Id, Modelo, Texto, TextoLargo, normalizar
+from comun.repositorio import RepositorioMemoria
+from comun.seguridad import (
+    ADMINISTRADOR, ASIGNAR_ENFERMERO, ASIGNAR_MEDICO, CANCELAR_SOLICITUDES,
+    CREAR_SOLICITUDES, LEER_SOLICITUDES, SERVICIO, VER_NOTIFICACIONES,
+    requiere
+)
 
 # ==================================================
 # CREACIÓN DE LA APLICACIÓN
 # ==================================================
 
-app = FastAPI(
-    title="Microservicio de Solicitudes Médicas",
-    description="Microservicio para gestionar solicitudes médicas del asilo",
-    version="1.0"
+app = crear_servicio(
+    titulo="Microservicio de Solicitudes Médicas",
+    descripcion=(
+        "Solicitudes de referencia del médico general a un especialista, "
+        "con asignación de enfermero, médico y horario"
+    ),
+    nombre="solicitudes"
 )
 
+# ==================================================
+# ESTADOS DE UNA SOLICITUD
+# Pendiente -> Asignada -> Atendida
+# Pendiente o Asignada -> Cancelada
+# ==================================================
+
+Estado = Literal["Pendiente", "Asignada", "Atendida", "Cancelada"]
 
 # ==================================================
-# LISTA DE SOLICITUDES
+# DATOS (en memoria hasta conectar la base de datos)
 # ==================================================
 
-solicitudes = [
+solicitudes = RepositorioMemoria([
     {
-        "id": 1,
         "paciente_id": 1,
+        "paciente": "Juan Pérez",
+        "especialidad_id": 2,
         "especialidad": "Cardiología",
         "motivo": "Dolor en el pecho",
-        "estado": "Pendiente"
+        "estado": "Pendiente",
+        "enfermero_id": 1,
+        "enfermero": "Rosa Hernández",
+        "medico_id": None,
+        "medico": "",
+        "horario": None,
+        "visita_id": None,
+        "fecha_creacion": "2026-10-10T08:30",
+        "creada_por": "Médico general"
     },
     {
-        "id": 2,
         "paciente_id": 2,
+        "paciente": "María López",
+        "especialidad_id": 3,
         "especialidad": "Medicina Interna",
         "motivo": "Control médico",
-        "estado": "Asignada"
+        "estado": "Asignada",
+        "enfermero_id": 2,
+        "enfermero": "Pedro Sic",
+        "medico_id": 3,
+        "medico": "Dr. Luis García",
+        "horario": "2026-10-22T09:00",
+        "visita_id": None,
+        "fecha_creacion": "2026-10-09T10:15",
+        "creada_por": "Médico general"
     }
-]
+])
+
+# Registro de los correos enviados (o simulados) a los familiares.
+notificaciones = RepositorioMemoria()
 
 
 # ==================================================
-# PÁGINA PRINCIPAL
+# MODELOS
 # ==================================================
 
-@app.get("/", response_class=HTMLResponse)
-def inicio():
+class SolicitudNueva(Modelo):
+    paciente_id: Id
+    especialidad: Texto
+    motivo: TextoLargo
+    enfermero_id: Id | None = None
 
-    tarjetas = ""
 
-    for solicitud in solicitudes:
+class SolicitudCambios(Modelo):
+    especialidad: Texto | None = None
+    motivo: TextoLargo | None = None
 
-        tarjetas += f"""
-        <div class="tarjeta">
 
-            <h3>
-                Solicitud #{solicitud["id"]}
-            </h3>
+class Asignacion(Modelo):
+    medico_id: Id
+    horario: datetime
+    enfermero_id: Id | None = None
 
-            <p>
-                <strong>Paciente:</strong>
-                {solicitud["paciente_id"]}
-            </p>
 
-            <p>
-                <strong>Especialidad:</strong>
-                {solicitud["especialidad"]}
-            </p>
+class AsignacionEnfermero(Modelo):
+    enfermero_id: Id
 
-            <p>
-                <strong>Motivo:</strong>
-                {solicitud["motivo"]}
-            </p>
 
-            <p>
-                <strong>Estado:</strong>
-                {solicitud["estado"]}
-            </p>
-
-        </div>
-        """
-
-    return f"""
-    <!DOCTYPE html>
-
-    <html lang="es">
-
-    <head>
-
-        <meta charset="UTF-8">
-
-        <meta name="viewport"
-              content="width=device-width, initial-scale=1.0">
-
-        <title>Solicitudes Médicas</title>
-
-        <style>
-
-            * {{
-                box-sizing: border-box;
-            }}
-
-            body {{
-                margin: 0;
-                font-family: Arial, sans-serif;
-                background-color: #f2f4f7;
-            }}
-
-            .encabezado {{
-                background-color: #2e7d32;
-                color: white;
-                text-align: center;
-                padding: 25px;
-            }}
-
-            .encabezado h1 {{
-                margin: 0;
-            }}
-
-            .contenedor {{
-                max-width: 900px;
-                margin: 30px auto;
-                padding: 20px;
-            }}
-
-            .formulario {{
-                background-color: white;
-                padding: 25px;
-                border-radius: 10px;
-
-                box-shadow:
-                    0 3px 10px rgba(0,0,0,0.12);
-            }}
-
-            .formulario h2 {{
-                margin-top: 0;
-                color: #333;
-            }}
-
-            label {{
-                display: block;
-                margin-top: 15px;
-                margin-bottom: 5px;
-                font-weight: bold;
-            }}
-
-            input,
-            select {{
-                width: 100%;
-                padding: 12px;
-
-                border: 1px solid #ccc;
-                border-radius: 5px;
-
-                font-size: 15px;
-            }}
-
-            button {{
-                width: 100%;
-                margin-top: 25px;
-                padding: 13px;
-
-                border: none;
-                border-radius: 5px;
-
-                background-color: #2e7d32;
-                color: white;
-
-                font-size: 16px;
-                cursor: pointer;
-            }}
-
-            button:hover {{
-                background-color: #1b5e20;
-            }}
-
-            .lista {{
-                margin-top: 30px;
-            }}
-
-            .lista h2 {{
-                color: #333;
-            }}
-
-            .tarjeta {{
-                background-color: white;
-                padding: 20px;
-                margin-bottom: 15px;
-
-                border-left: 5px solid #2e7d32;
-                border-radius: 7px;
-
-                box-shadow:
-                    0 2px 8px rgba(0,0,0,0.10);
-            }}
-
-            .tarjeta h3 {{
-                margin-top: 0;
-                color: #2e7d32;
-            }}
-
-            .tarjeta p {{
-                margin: 8px 0;
-                color: #444;
-            }}
-
-            .volver {{
-                display: block;
-                text-align: center;
-                margin-top: 25px;
-
-                color: #2e7d32;
-                text-decoration: none;
-
-                font-weight: bold;
-            }}
-
-        </style>
-
-    </head>
-
-
-    <body>
-
-
-        <div class="encabezado">
-
-            <h1>
-                📋 Solicitudes Médicas
-            </h1>
-
-            <p>
-                Asilo Cabeza de Algodón
-            </p>
-
-        </div>
-
-
-        <div class="contenedor">
-
-
-            <!-- FORMULARIO -->
-
-            <div class="formulario">
-
-                <h2>
-                    Nueva Solicitud Médica
-                </h2>
-
-
-                <form
-                    action="/crear"
-                    method="post"
-                >
-
-
-                    <label>
-                        ID del paciente
-                    </label>
-
-                    <input
-                        type="number"
-                        name="paciente_id"
-                        placeholder="Ejemplo: 1"
-                        min="1"
-                        required
-                    >
-
-
-                    <label>
-                        Especialidad
-                    </label>
-
-                    <select
-                        name="especialidad"
-                        required
-                    >
-
-                        <option value="">
-                            Seleccione una especialidad
-                        </option>
-
-                        <option value="Cardiología">
-                            Cardiología
-                        </option>
-
-                        <option value="Medicina Interna">
-                            Medicina Interna
-                        </option>
-
-                        <option value="Geriatría">
-                            Geriatría
-                        </option>
-
-                        <option value="Neurología">
-                            Neurología
-                        </option>
-
-                        <option value="Traumatología">
-                            Traumatología
-                        </option>
-
-                    </select>
-
-
-                    <label>
-                        Motivo de la solicitud
-                    </label>
-
-                    <input
-                        type="text"
-                        name="motivo"
-                        placeholder="Ingrese el motivo"
-                        required
-                    >
-
-
-                    <button type="submit">
-
-                        Registrar solicitud
-
-                    </button>
-
-
-                </form>
-
-            </div>
-
-
-            <!-- LISTA -->
-
-            <div class="lista">
-
-                <h2>
-                    Solicitudes registradas
-                </h2>
-
-                {tarjetas}
-
-            </div>
-
-
-            <a
-                class="volver"
-                href="http://127.0.0.1:8002"
-            >
-                ← Volver al menú principal
-            </a>
-
-
-        </div>
-
-
-    </body>
-
-    </html>
-    """
+class CambioEstado(Modelo):
+    estado: Estado
+    visita_id: Id | None = None
 
 
 # ==================================================
-# CREAR SOLICITUD DESDE EL FORMULARIO
+# VALIDACIONES CON OTROS SERVICIOS
 # ==================================================
 
-@app.post("/crear", response_class=HTMLResponse)
-def crear_desde_formulario(
-    paciente_id: int = Form(...),
-    especialidad: str = Form(...),
-    motivo: str = Form(...)
+def _obtener_o_404(solicitud_id):
+    solicitud = solicitudes.obtener(solicitud_id)
+
+    if solicitud is None:
+        raise no_encontrado("Solicitud")
+
+    return solicitud
+
+
+async def _validar_paciente(paciente_id):
+    paciente = await obtener_o_none(URL_PACIENTES, f"/pacientes/{paciente_id}")
+
+    if paciente is None:
+        raise datos_invalidos(
+            "paciente_id", f"El paciente con id {paciente_id} no existe."
+        )
+
+    return paciente
+
+
+async def _validar_especialidad(nombre):
+    catalogo = await obtener_o_none(URL_MEDICO, "/especialidades")
+
+    for especialidad in catalogo or []:
+        if normalizar(especialidad["nombre"]) == normalizar(nombre):
+            return especialidad
+
+    opciones = ", ".join(e["nombre"] for e in catalogo or [])
+    raise datos_invalidos(
+        "especialidad",
+        f"La especialidad «{nombre}» no está registrada. Opciones: {opciones}."
+    )
+
+
+async def _validar_enfermero(enfermero_id):
+    enfermero = await obtener_o_none(URL_MEDICO, f"/enfermeros/{enfermero_id}")
+
+    if enfermero is None:
+        raise datos_invalidos("enfermero_id", "El enfermero(a) indicado no existe.")
+
+    return enfermero
+
+
+async def _notificar_familiar(solicitud, asunto, cuerpo):
+    paciente = await obtener_o_none(URL_PACIENTES, f"/pacientes/{solicitud['paciente_id']}")
+    paciente = paciente or {}
+
+    destinatario = paciente.get("familiar_correo", "")
+    saludo = f"Estimado(a) {paciente.get('familiar_nombre') or 'familiar'}:\n\n"
+
+    estado = await enviar_correo(destinatario, asunto, saludo + cuerpo)
+
+    notificaciones.agregar({
+        "solicitud_id": solicitud["id"],
+        "paciente": solicitud["paciente"],
+        "destinatario": destinatario,
+        "asunto": asunto,
+        "cuerpo": saludo + cuerpo,
+        "estado": estado,
+        "fecha": datetime.now().isoformat(timespec="minutes")
+    })
+
+
+# ==================================================
+# GET - LISTAR SOLICITUDES
+# ==================================================
+
+@app.get("/solicitudes", tags=["Solicitudes"])
+def obtener_solicitudes(
+    paciente_id: int | None = None,
+    estado: Estado | None = None,
+    medico_id: int | None = None,
+    usuario: dict = Depends(requiere(LEER_SOLICITUDES))
 ):
 
-    nueva_solicitud = {
-
-        "id": len(solicitudes) + 1,
-
-        "paciente_id": paciente_id,
-
-        "especialidad": especialidad,
-
-        "motivo": motivo,
-
-        "estado": "Pendiente"
-    }
-
-    solicitudes.append(nueva_solicitud)
-
-
-    return f"""
-    <!DOCTYPE html>
-
-    <html lang="es">
-
-    <head>
-
-        <meta charset="UTF-8">
-
-        <title>Solicitud creada</title>
-
-        <style>
-
-            body {{
-                font-family: Arial, sans-serif;
-                background-color: #f2f4f7;
-                padding: 40px;
-            }}
-
-            .mensaje {{
-                max-width: 600px;
-                margin: auto;
-
-                background-color: white;
-
-                padding: 30px;
-
-                border-radius: 10px;
-
-                text-align: center;
-
-                box-shadow:
-                    0 3px 10px rgba(0,0,0,0.12);
-            }}
-
-            .exito {{
-                color: #2e7d32;
-
-                font-size: 22px;
-
-                font-weight: bold;
-
-                margin-bottom: 20px;
-            }}
-
-            .datos {{
-                background-color: #f5f5f5;
-
-                padding: 20px;
-
-                border-radius: 5px;
-
-                text-align: left;
-            }}
-
-            a {{
-                display: block;
-
-                margin-top: 20px;
-
-                padding: 12px;
-
-                background-color: #2e7d32;
-
-                color: white;
-
-                text-decoration: none;
-
-                border-radius: 5px;
-            }}
-
-        </style>
-
-    </head>
-
-
-    <body>
-
-        <div class="mensaje">
-
-
-            <div class="exito">
-
-                ✓ Solicitud creada correctamente
-
-            </div>
-
-
-            <div class="datos">
-
-                <p>
-                    <strong>ID:</strong>
-                    {nueva_solicitud["id"]}
-                </p>
-
-                <p>
-                    <strong>Paciente:</strong>
-                    {paciente_id}
-                </p>
-
-                <p>
-                    <strong>Especialidad:</strong>
-                    {especialidad}
-                </p>
-
-                <p>
-                    <strong>Motivo:</strong>
-                    {motivo}
-                </p>
-
-                <p>
-                    <strong>Estado:</strong>
-                    Pendiente
-                </p>
-
-            </div>
-
-
-            <a href="/">
-
-                Ver solicitudes
-
-            </a>
-
-
-            <a href="http://127.0.0.1:8002">
-
-                Volver al menú principal
-
-            </a>
-
-
-        </div>
-
-    </body>
-
-    </html>
-    """
-
-
-# ==================================================
-# GET - OBTENER TODAS LAS SOLICITUDES
-# ==================================================
-
-@app.get("/solicitudes")
-def obtener_solicitudes():
-
-    return solicitudes
-
-
-# ==================================================
-# GET - OBTENER UNA SOLICITUD
-# ==================================================
-
-@app.get("/solicitudes/{solicitud_id}")
-def obtener_solicitud(solicitud_id: int):
-
-    for solicitud in solicitudes:
-
-        if solicitud["id"] == solicitud_id:
-
-            return solicitud
+    lista = solicitudes.listar(
+        lambda s: (paciente_id is None or s["paciente_id"] == paciente_id) and
+        (estado is None or s["estado"] == estado) and
+        (medico_id is None or s["medico_id"] == medico_id)
+    )
 
     return {
-        "mensaje": "Solicitud no encontrada"
+        "mensaje": "Lista de solicitudes",
+        "solicitudes": sorted(lista, key=lambda s: s["fecha_creacion"], reverse=True)
     }
 
 
 # ==================================================
-# POST - CREAR SOLICITUD
+# GET - OBTENER UNA SOLICITUD POR ID
 # ==================================================
 
-@app.post("/solicitudes")
-def crear_solicitud(solicitud: dict):
+@app.get("/solicitudes/{solicitud_id}", tags=["Solicitudes"])
+def obtener_solicitud(
+    solicitud_id: int,
+    usuario: dict = Depends(requiere(LEER_SOLICITUDES))
+):
+    return _obtener_o_404(solicitud_id)
 
-    solicitud["id"] = len(solicitudes) + 1
 
-    solicitud["estado"] = "Pendiente"
+# ==================================================
+# POST - CREAR SOLICITUD (médico general)
+# ==================================================
 
-    solicitudes.append(solicitud)
+@app.post("/solicitudes", status_code=201, tags=["Solicitudes"])
+async def crear_solicitud(
+    datos: SolicitudNueva,
+    usuario: dict = Depends(requiere(CREAR_SOLICITUDES))
+):
+
+    paciente = await _validar_paciente(datos.paciente_id)
+    especialidad = await _validar_especialidad(datos.especialidad)
+    enfermero = await _validar_enfermero(datos.enfermero_id) if datos.enfermero_id else None
+
+    solicitud = solicitudes.agregar({
+        "paciente_id": paciente["id"],
+        "paciente": paciente["nombre"],
+        "especialidad_id": especialidad["id"],
+        "especialidad": especialidad["nombre"],
+        "motivo": datos.motivo,
+        "estado": "Pendiente",
+        "enfermero_id": enfermero["id"] if enfermero else None,
+        "enfermero": enfermero["nombre"] if enfermero else "",
+        "medico_id": None,
+        "medico": "",
+        "horario": None,
+        "visita_id": None,
+        "fecha_creacion": datetime.now().isoformat(timespec="minutes"),
+        "creada_por": usuario["nombre"]
+    })
+
+    await _notificar_familiar(
+        solicitud,
+        f"Solicitud médica para {paciente['nombre']}",
+        f"Le informamos que {paciente['nombre']} fue evaluado(a) por el médico "
+        f"general y referido(a) a la especialidad de {especialidad['nombre']}.\n\n"
+        f"Motivo: {datos.motivo}\n"
+        f"Estado: pendiente de asignación de médico y horario por la fundación.\n\n"
+        f"Le enviaremos otro aviso cuando se asigne el médico.\n\n"
+        f"Asilo Cabeza de Algodón"
+    )
 
     return {
         "mensaje": "Solicitud creada correctamente",
@@ -567,61 +263,204 @@ def crear_solicitud(solicitud: dict):
 
 
 # ==================================================
-# PUT - ACTUALIZAR SOLICITUD
+# PUT - MODIFICAR MOTIVO O ESPECIALIDAD
+# Solo mientras la solicitud está pendiente.
 # ==================================================
 
-@app.put("/solicitudes/{solicitud_id}")
-def actualizar_solicitud(
+@app.put("/solicitudes/{solicitud_id}", tags=["Solicitudes"])
+async def actualizar_solicitud(
     solicitud_id: int,
-    datos: dict
+    datos: SolicitudCambios,
+    usuario: dict = Depends(requiere(CREAR_SOLICITUDES))
 ):
 
-    for solicitud in solicitudes:
+    solicitud = _obtener_o_404(solicitud_id)
 
-        if solicitud["id"] == solicitud_id:
+    if solicitud["estado"] != "Pendiente":
+        raise conflicto("Solo se puede modificar una solicitud pendiente.")
 
-            solicitud["especialidad"] = datos.get(
-                "especialidad",
-                solicitud["especialidad"]
-            )
+    cambios = {}
 
-            solicitud["motivo"] = datos.get(
-                "motivo",
-                solicitud["motivo"]
-            )
+    if datos.motivo is not None:
+        cambios["motivo"] = datos.motivo
 
-            solicitud["estado"] = datos.get(
-                "estado",
-                solicitud["estado"]
-            )
-
-            return {
-                "mensaje": "Solicitud actualizada correctamente",
-                "solicitud": solicitud
-            }
+    if datos.especialidad is not None:
+        especialidad = await _validar_especialidad(datos.especialidad)
+        cambios.update(especialidad_id=especialidad["id"], especialidad=especialidad["nombre"])
 
     return {
-        "mensaje": "Solicitud no encontrada"
+        "mensaje": "Solicitud actualizada correctamente",
+        "solicitud": solicitudes.actualizar(solicitud_id, cambios)
     }
 
 
 # ==================================================
-# DELETE - ELIMINAR SOLICITUD
+# PUT - ASIGNAR ENFERMERO(A) ACOMPAÑANTE (médico general)
 # ==================================================
 
-@app.delete("/solicitudes/{solicitud_id}")
-def eliminar_solicitud(solicitud_id: int):
+@app.put("/solicitudes/{solicitud_id}/enfermero", tags=["Asignaciones"])
+async def asignar_enfermero(
+    solicitud_id: int,
+    datos: AsignacionEnfermero,
+    usuario: dict = Depends(requiere(ASIGNAR_ENFERMERO))
+):
 
-    for solicitud in solicitudes:
+    solicitud = _obtener_o_404(solicitud_id)
 
-        if solicitud["id"] == solicitud_id:
+    if solicitud["estado"] in ("Atendida", "Cancelada"):
+        raise conflicto(f"La solicitud ya está {solicitud['estado'].lower()}.")
 
-            solicitudes.remove(solicitud)
-
-            return {
-                "mensaje": "Solicitud eliminada correctamente"
-            }
+    enfermero = await _validar_enfermero(datos.enfermero_id)
 
     return {
-        "mensaje": "Solicitud no encontrada"
+        "mensaje": "Enfermero(a) asignado correctamente",
+        "solicitud": solicitudes.actualizar(
+            solicitud_id,
+            {"enfermero_id": enfermero["id"], "enfermero": enfermero["nombre"]}
+        )
     }
+
+
+# ==================================================
+# PUT - ASIGNAR MÉDICO Y HORARIO (fundación)
+# ==================================================
+
+@app.put("/solicitudes/{solicitud_id}/asignacion", tags=["Asignaciones"])
+async def asignar_medico(
+    solicitud_id: int,
+    datos: Asignacion,
+    usuario: dict = Depends(requiere(ASIGNAR_MEDICO))
+):
+
+    solicitud = _obtener_o_404(solicitud_id)
+
+    if solicitud["estado"] not in ("Pendiente", "Asignada"):
+        raise conflicto(f"La solicitud ya está {solicitud['estado'].lower()}.")
+
+    medico = await obtener_o_none(URL_MEDICO, f"/medicos/{datos.medico_id}")
+
+    if medico is None:
+        raise datos_invalidos("medico_id", "El médico indicado no existe.")
+
+    if medico["especialidad_id"] != solicitud["especialidad_id"]:
+        raise datos_invalidos(
+            "medico_id",
+            f"{medico['nombre']} es de {medico['especialidad']}; "
+            f"la solicitud requiere {solicitud['especialidad']}."
+        )
+
+    if datos.horario <= datetime.now():
+        raise datos_invalidos("horario", "El horario debe ser una fecha futura.")
+
+    horario = datos.horario.isoformat(timespec="minutes")
+
+    ocupado = solicitudes.listar(
+        lambda s: s["id"] != solicitud_id and s["estado"] == "Asignada" and
+        s["medico_id"] == medico["id"] and s["horario"] == horario
+    )
+
+    if ocupado:
+        raise conflicto(f"{medico['nombre']} ya tiene un paciente asignado en ese horario.")
+
+    cambios = {
+        "medico_id": medico["id"],
+        "medico": medico["nombre"],
+        "horario": horario,
+        "estado": "Asignada"
+    }
+
+    if datos.enfermero_id:
+        enfermero = await _validar_enfermero(datos.enfermero_id)
+        cambios.update(enfermero_id=enfermero["id"], enfermero=enfermero["nombre"])
+
+    solicitud = solicitudes.actualizar(solicitud_id, cambios)
+
+    await _notificar_familiar(
+        solicitud,
+        f"Cita asignada para {solicitud['paciente']}",
+        f"La fundación asignó la cita de {solicitud['paciente']} en la especialidad "
+        f"de {solicitud['especialidad']}.\n\n"
+        f"Médico: {medico['nombre']}\n"
+        f"Fecha y hora: {datos.horario.strftime('%d/%m/%Y %H:%M')}\n"
+        f"Enfermero(a) acompañante: {solicitud['enfermero'] or 'por asignar'}\n\n"
+        f"Asilo Cabeza de Algodón"
+    )
+
+    return {
+        "mensaje": "Médico y horario asignados correctamente",
+        "solicitud": solicitud
+    }
+
+
+# ==================================================
+# PUT - CAMBIAR ESTADO
+# "Asignada" solo se obtiene con la asignación de médico y horario,
+# y "Atendida" la registra el servicio médico al crear la visita.
+# ==================================================
+
+@app.put("/solicitudes/{solicitud_id}/estado", tags=["Solicitudes"])
+def cambiar_estado(
+    solicitud_id: int,
+    datos: CambioEstado,
+    usuario: dict = Depends(requiere(CANCELAR_SOLICITUDES))
+):
+
+    solicitud = _obtener_o_404(solicitud_id)
+    actual = solicitud["estado"]
+
+    if actual in ("Atendida", "Cancelada"):
+        raise conflicto(f"La solicitud ya está {actual.lower()} y no puede cambiar de estado.")
+
+    if datos.estado == "Asignada":
+        raise datos_invalidos(
+            "estado", "Para asignar la solicitud indique médico y horario en /asignacion."
+        )
+
+    if datos.estado == "Pendiente":
+        raise datos_invalidos("estado", "Una solicitud no puede regresar a pendiente.")
+
+    if datos.estado == "Atendida":
+        if usuario["rol"] != SERVICIO:
+            raise datos_invalidos(
+                "estado", "La solicitud se marca como atendida al registrar la visita médica."
+            )
+        if actual != "Asignada":
+            raise conflicto("Solo una solicitud asignada puede marcarse como atendida.")
+
+    cambios = {"estado": datos.estado}
+    if datos.visita_id:
+        cambios["visita_id"] = datos.visita_id
+
+    return {
+        "mensaje": f"La solicitud ahora está {datos.estado.lower()}",
+        "solicitud": solicitudes.actualizar(solicitud_id, cambios)
+    }
+
+
+# ==================================================
+# DELETE - ELIMINAR SOLICITUD (administrador)
+# ==================================================
+
+@app.delete("/solicitudes/{solicitud_id}", tags=["Solicitudes"])
+def eliminar_solicitud(
+    solicitud_id: int,
+    usuario: dict = Depends(requiere((ADMINISTRADOR,)))
+):
+
+    if not solicitudes.eliminar(solicitud_id):
+        raise no_encontrado("Solicitud")
+
+    return {
+        "mensaje": "Solicitud eliminada correctamente"
+    }
+
+
+# ==================================================
+# GET - CORREOS ENVIADOS A FAMILIARES
+# ==================================================
+
+@app.get("/notificaciones", tags=["Notificaciones"])
+def obtener_notificaciones(
+    usuario: dict = Depends(requiere(VER_NOTIFICACIONES))
+):
+    return sorted(notificaciones.listar(), key=lambda n: n["id"], reverse=True)

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Cuentas de pacientes{% endblock %}
+
+{% block contenido %}
+<p><a href="/finanzas">← Finanzas</a></p>
+<h1>Cuentas de pacientes</h1>
+<p class="subtitulo">Costos de consultas, exámenes y medicamentos (con el descuento de la fundación) cargados a la cuenta del familiar.</p>
+
+<div class="tarjeta">
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Paciente</th><th>Familiar</th><th class="numero">Cargos</th><th class="numero">Pagado</th><th class="numero">Saldo</th><th></th></tr></thead>
+            <tbody>
+                {% for c in cuentas %}
+                <tr>
+                    <td>{{ c.paciente }}</td>
+                    <td>{{ c.familiar or "—" }}</td>
+                    <td class="numero">{{ c.total_cargos|q }}</td>
+                    <td class="numero">{{ c.pagado|q }}</td>
+                    <td class="numero">{% if c.saldo > 0 %}<strong>{{ c.saldo|q }}</strong>{% else %}{{ c.saldo|q }}{% endif %}</td>
+                    <td><a class="boton pequeno secundario" href="/finanzas/cuentas/{{ c.paciente_id }}">Estado de cuenta</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

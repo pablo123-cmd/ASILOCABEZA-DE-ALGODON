@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo %}
+{% block titulo %}Registrar visita médica{% endblock %}
+
+{% block contenido %}
+<h1>Registrar visita médica</h1>
+<p class="subtitulo">La solicitud #{{ solicitud.id }} se convertirá en visita médica.</p>
+
+<div class="tarjeta">
+    <h2>Solicitud del paciente</h2>
+    <dl class="datos">
+        <dt>Paciente</dt><dd>{{ solicitud.paciente }}</dd>
+        <dt>Referido a</dt><dd>{{ solicitud.especialidad }}</dd>
+        <dt>Motivo de la referencia</dt><dd>{{ solicitud.motivo }}</dd>
+        <dt>Médico</dt><dd>{{ solicitud.medico or "Sin asignar" }}</dd>
+        <dt>Horario</dt><dd>{{ solicitud.horario|fecha }}</dd>
+        <dt>Enfermero(a)</dt><dd>{{ solicitud.enfermero or "—" }}</dd>
+    </dl>
+    {% if puede(seg.LEER_FICHA) %}
+    <div class="acciones">
+        <a class="boton secundario" href="/pacientes/{{ solicitud.paciente_id }}/ficha" target="_blank">
+            Consultar ficha e historial médico (nueva pestaña)
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if solicitud.estado == "Asignada" %}
+<form class="tarjeta" method="post" action="/visitas/nueva">
+    <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
+    <div class="formulario">
+        {{ campo("diagnostico", "Diagnóstico", valores, errores, tipo="textarea", requerido=True) }}
+        {{ campo("observaciones", "Observaciones médicas", valores, errores, tipo="textarea") }}
+    </div>
+    <p class="ayuda">Después de guardar podrá solicitar exámenes de laboratorio e indicar medicamentos.</p>
+    <div class="acciones">
+        <button class="boton" type="submit">Registrar visita</button>
+        <a class="boton secundario" href="/solicitudes/{{ solicitud.id }}">Cancelar</a>
+    </div>
+</form>
+{% else %}
+<div class="aviso info">Esta solicitud está {{ solicitud.estado|lower }}; solo se pueden atender solicitudes asignadas.</div>
+{% endif %}
+{% endblock %}

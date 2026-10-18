@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo %}
+{% block titulo %}Médicos y catálogos{% endblock %}
+
+{% block contenido %}
+<h1>Médicos y catálogos</h1>
+<p class="subtitulo">Información de la fundación: médicos, especialidades, enfermería, laboratorio, farmacia y precios.</p>
+
+<div class="modulos">
+    {% for clave, catalogo in catalogos.items() %}
+    <div class="modulo">
+        <h2>{{ catalogo.titulo }}</h2>
+        <p>{{ resumen[clave] }} registro(s)</p>
+        <a class="boton ancho" href="/catalogos/{{ clave }}">Abrir</a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="tarjeta" style="margin-top:20px">
+    <h2>Descuento de la fundación</h2>
+    <p>Porcentaje de descuento que la fundación aplica a los internos del asilo en consultas,
+       exámenes y medicamentos. El cambio aplica a los servicios que se registren desde ahora.</p>
+    {% if puede(seg.EDITAR_CATALOGOS) %}
+    <form class="filtros" method="post" action="/catalogos/configuracion">
+        {{ campo("descuento_pct", "Descuento (%)", configuracion, errores, tipo="number",
+                 requerido=True, min=0, max=100) }}
+        <button class="boton" type="submit">Guardar</button>
+    </form>
+    {% else %}
+    <p class="cifra"><span class="valor">{{ configuracion.descuento_pct }} %</span></p>
+    {% endif %}
+</div>
+{% endblock %}

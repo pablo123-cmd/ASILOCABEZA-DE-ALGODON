@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "macros.html" import campo as campo_form %}
+{% set editable = puede(catalogo.editar) %}
+{% block titulo %}{{ catalogo.titulo }}{% endblock %}
+
+{% block contenido %}
+<p><a href="/catalogos">← Médicos y catálogos</a></p>
+<h1>{{ catalogo.titulo }}</h1>
+
+<div class="tarjeta">
+    {% if registros %}
+    <div class="tabla-scroll">
+        <table>
+            <thead>
+                <tr>
+                    {% for c in campos %}<th{% if c.moneda %} class="numero"{% endif %}>{{ c.etiqueta }}</th>{% endfor %}
+                    {% if editable %}<th></th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    {% for c in campos %}
+                    {% set valor = r[c.mostrar] if c.mostrar else r[c.nombre] %}
+                    <td{% if c.moneda %} class="numero"{% endif %}>{{ valor|q if c.moneda else (valor or "—") }}</td>
+                    {% endfor %}
+                    {% if editable %}
+                    <td><a class="boton pequeno secundario" href="/catalogos/{{ tipo }}/{{ r.id }}">Editar</a></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No hay registros.</p>
+    {% endif %}
+</div>
+
+{% if editable %}
+<form class="tarjeta" method="post" action="/catalogos/{{ tipo }}">
+    <h2>Agregar</h2>
+    <div class="formulario">
+        {% for c in campos %}
+        {{ campo_form(c.nombre, c.etiqueta, valores, errores, tipo=c.tipo or "text", requerido=c.requerido,
+                      opciones=c.opciones, min=0 if c.tipo == "number" else none, paso=c.paso) }}
+        {% endfor %}
+    </div>
+    <button class="boton" type="submit">Agregar</button>
+</form>
+{% endif %}
+{% endblock %}

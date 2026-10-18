@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "macros.html" import estado %}
+{% set p = cuenta.paciente %}
+{% block titulo %}Estado de cuenta de {{ p.nombre }}{% endblock %}
+
+{% block contenido %}
+<p><a href="/finanzas/cuentas">← Cuentas de pacientes</a></p>
+<h1>Estado de cuenta: {{ p.nombre }}</h1>
+<p class="subtitulo">Familiar responsable: {{ p.familiar_nombre or "—" }}{% if p.familiar_telefono %} · {{ p.familiar_telefono }}{% endif %}</p>
+
+<div class="tarjeta">
+    <div class="cifras">
+        <div class="cifra"><div class="nombre">Total de cargos</div><div class="valor">{{ cuenta.total_cargos|q }}</div></div>
+        <div class="cifra"><div class="nombre">Pagado</div><div class="valor">{{ cuenta.pagado|q }}</div></div>
+        <div class="cifra"><div class="nombre">Saldo pendiente</div><div class="valor">{{ cuenta.saldo|q }}</div></div>
+    </div>
+</div>
+
+{% for v in cuenta.visitas %}
+<div class="tarjeta">
+    <div class="fila-titulo">
+        <h2 style="margin:0">Visita #{{ v.visita_id }} · {{ v.fecha|fecha }} {{ estado(v.estado) }}</h2>
+    </div>
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Tipo</th><th>Detalle</th><th class="numero">Precio regular</th><th class="numero">Descuento</th><th class="numero">Costo</th></tr></thead>
+            <tbody>
+                {% for c in v.cargos %}
+                <tr>
+                    <td>{{ c.tipo }}</td>
+                    <td>{{ c.descripcion }}</td>
+                    <td class="numero">{{ c.precio_regular|q }}</td>
+                    <td class="numero">{{ c.descuento_pct }} %</td>
+                    <td class="numero">{{ c.monto|q }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr><td colspan="5" class="numero">Total {{ v.total|q }} · Pagado {{ v.pagado|q }} · Saldo {{ v.saldo|q }}</td></tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% if v.saldo > 0 %}
+    <form class="filtros" method="post" action="/finanzas/cuentas/{{ p.id }}/cobro" style="margin-top:14px">
+        <input type="hidden" name="visita_id" value="{{ v.visita_id }}">
+        <div class="campo{% if errores.get('monto') and valores.get('visita_id')|string == v.visita_id|string %} con-error{% endif %}">
+            <label for="monto-{{ v.visita_id }}">Monto a cobrar (Q)</label>
+            <input id="monto-{{ v.visita_id }}" name="monto" type="number" step="0.01" min="0.01" max="{{ v.saldo }}" value="{{ v.saldo }}" required>
+            {% if errores.get('monto') and valores.get('visita_id')|string == v.visita_id|string %}<div class="error-campo">{{ errores.monto }}</div>{% endif %}
+        </div>
+        <div class="campo">
+            <label for="fecha-{{ v.visita_id }}">Fecha</label>
+            <input id="fecha-{{ v.visita_id }}" name="fecha" type="date">
+        </div>
+        <div class="campo">
+            <label for="obs-{{ v.visita_id }}">Observaciones</label>
+            <input id="obs-{{ v.visita_id }}" name="observaciones">
+        </div>
+        <button class="boton" type="submit">Registrar cobro</button>
+    </form>
+    {% endif %}
+</div>
+{% else %}
+<div class="tarjeta"><p class="vacio">El paciente no tiene cargos por servicios médicos.</p></div>
+{% endfor %}
+
+<div class="tarjeta">
+    <h2>Cuotas mensuales pagadas</h2>
+    {% if cuenta.cuotas %}
+    <div class="tabla-scroll">
+        <table>
+            <thead><tr><th>Mes</th><th>Fecha de pago</th><th class="numero">Monto</th></tr></thead>
+            <tbody>
+                {% for c in cuenta.cuotas %}
+                <tr><td>{{ c.mes }}</td><td>{{ c.fecha|fecha }}</td><td class="numero">{{ c.monto|q }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="vacio">No hay cuotas registradas. <a href="/finanzas/cuotas">Registrar cuota</a>.</p>
+    {% endif %}
+</div>
+{% endblock %}
