@@ -404,18 +404,18 @@
     <Task>
       <UID>25</UID>
       <ID>25</ID>
-      <Name>Conexión a la base de datos</Name>
+      <Name>Conexión a la base de datos MySQL</Name>
       <Type>1</Type>
       <OutlineLevel>2</OutlineLevel>
       <Summary>0</Summary>
       <Milestone>0</Milestone>
-      <Start>2026-10-19T08:00:00</Start>
-      <Finish>2026-10-28T17:00:00</Finish>
-      <Duration>PT64H0M0S</Duration>
+      <Start>2026-10-18T08:00:00</Start>
+      <Finish>2026-10-18T17:00:00</Finish>
+      <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <ConstraintType>4</ConstraintType>
-      <ConstraintDate>2026-10-19T08:00:00</ConstraintDate>
-      <PercentComplete>0</PercentComplete>
+      <ConstraintDate>2026-10-18T08:00:00</ConstraintDate>
+      <PercentComplete>100</PercentComplete>
     </Task>
     <Task>
       <UID>26</UID>
@@ -706,7 +706,7 @@
       <TaskUID>25</TaskUID>
       <ResourceUID>1</ResourceUID>
       <Units>1</Units>
-      <Work>PT64H0M0S</Work>
+      <Work>PT8H0M0S</Work>
     </Assignment>
     <Assignment>
       <UID>22</UID>
