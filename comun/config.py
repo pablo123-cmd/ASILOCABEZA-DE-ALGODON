@@ -33,6 +33,21 @@ DURACION_SESION_SEGUNDOS = 8 * 60 * 60
 NOMBRE_COOKIE = "asilo_sesion"
 
 # --------------------------------------------------
+# BASE DE DATOS
+# ASILO_BD = "mysql" (por defecto) guarda los datos en MySQL.
+# ASILO_BD = "memoria" los guarda en memoria (pruebas automáticas
+# o demostración sin MySQL); se pierden al reiniciar.
+# --------------------------------------------------
+
+BASE_DE_DATOS = os.getenv("ASILO_BD", "mysql")
+
+MYSQL_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
+MYSQL_PUERTO = int(os.getenv("MYSQL_PUERTO", "3306"))
+MYSQL_USUARIO = os.getenv("MYSQL_USUARIO", "asilo")
+MYSQL_CONTRASENA = os.getenv("MYSQL_CONTRASENA", "Asilo2026!")
+MYSQL_BD = os.getenv("MYSQL_BD", "asilo_cabeza_algodon")
+
+# --------------------------------------------------
 # REGLAS DE NEGOCIO
 # --------------------------------------------------
 

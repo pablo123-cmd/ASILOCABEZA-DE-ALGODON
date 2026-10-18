@@ -12,7 +12,7 @@ documentación del proyecto.
 
 | Defecto | Severidad | Caso | Estado | Corrección |
 |---|---|---|---|---|
-| DEF-01 | Crítica | CP-20 | **Pendiente** | La base de datos aún no está conectada. El acceso a datos ya pasa por un repositorio (`comun/repositorio.py`) para conectarla sin cambiar el resto del sistema. |
+| DEF-01 | Crítica | CP-20 | Corregido | Los datos se guardan en MySQL 8 (`docs/bd/asilo.sql`: 19 tablas con llaves foráneas). Verificado: después de reiniciar los cinco servicios siguen pacientes, ficha, visitas, cobros, donaciones, usuarios y configuración. |
 | DEF-02 | Crítica | CP-37 | Corregido | Inicio de sesión con roles. Los cinco servicios rechazan las peticiones sin sesión (401) o sin permiso (403). |
 | DEF-03 | Alta | CP-30 | Corregido | El menú principal tiene su propio formulario de solicitudes, que envía los datos al microservicio. |
 | DEF-04 | Alta | CP-13 | Corregido | Pantallas de listado, búsqueda por nombre o habitación, detalle y edición de pacientes. |
@@ -31,7 +31,7 @@ documentación del proyecto.
 
 ### Notas para la nueva ronda de pruebas
 
-- **Cómo iniciar el sistema:** `python iniciar.py` y abrir http://127.0.0.1:8002 (ver `README.md`).
+- **Cómo iniciar el sistema:** instalar MySQL, ejecutar `docs/bd/asilo.sql`, luego `python iniciar.py` y abrir http://127.0.0.1:8002 (ver `README.md`).
   Los usuarios de prueba de cada rol están en el README.
 - **Pruebas de API directas:** las APIs requieren sesión. Inicie sesión en el menú principal y use
   `/docs` de cada servicio en el mismo navegador, o envíe el encabezado `Authorization: Bearer <token>`.
@@ -80,7 +80,7 @@ Diferencias entre el documento del proyecto y el sistema construido, con su just
 | Aspecto | Documento del proyecto | Sistema | Justificación |
 |---|---|---|---|
 | Lenguaje y entorno | Visual Studio y C# | Python 3 con FastAPI | La especificación permite "las herramientas de software que desee". FastAPI genera la documentación de cada API (`/docs`) y facilita separar el sistema en servicios. |
-| Base de datos | MySQL, SQL Server u Oracle | Datos en memoria (pendiente) | Se priorizaron los módulos y la corrección de defectos. El acceso a datos está aislado en repositorios para conectar el SGBD sin rehacer el sistema. |
+| Base de datos | MySQL, SQL Server u Oracle | MySQL 8 | Gratuito, el más sencillo de instalar en Windows y con buen soporte en Python (PyMySQL). |
 | Arquitectura | Por capas, con MVC y Repository/DAO | Microservicios por capas | Cada servicio mantiene la separación por capas: modelos Pydantic (validación), rutas (controladores), repositorio (acceso a datos). En el menú principal, las plantillas Jinja2 son las vistas (MVC). |
 | Módulos | 12 módulos | 12 módulos, en 5 servicios | Usuarios y seguridad, y Configuración, en el menú principal; Pacientes; Solicitudes y citas; Médicos, especialidades, enfermería, ficha e historial, laboratorio y farmacia en el servicio médico; Entradas, salidas, caja, donaciones y cuotas en finanzas; Reportes en el menú principal. |
 | Interfaces C# | `IPacienteService`, `IMedicoService`, ... | APIs REST por servicio | Cada interfaz de servicio del diseño corresponde a la API de un microservicio (ver `/docs`). |
@@ -97,7 +97,8 @@ Problemas encontrados en la primera versión y su causa:
 
 ## 4. Posibles errores conocidos
 
-- Los datos se pierden al reiniciar los servicios (hasta conectar la base de datos).
+- Si MySQL está apagado, el sistema muestra "Base de datos no disponible" y `iniciar.py` no arranca hasta que haya conexión.
+- No se puede eliminar un paciente que ya tiene solicitudes, visitas o pagos (responde 409), para no perder su historial.
 - Si un servicio está apagado, sus módulos muestran "Servicio no disponible"; los demás siguen funcionando.
 - Si se desactiva un usuario, pierde el acceso al menú de inmediato, pero un token suyo ya emitido sigue
   siendo aceptado por las APIs directas hasta que vence (8 horas).
@@ -112,6 +113,5 @@ cobro, y la caída de servicios (CP-32, CP-33).
 
 ## 6. Pendientes
 
-- Conexión a la base de datos (DEF-01, CP-20), modelo ER e instancia de la base de datos.
 - Publicar el sistema en un servidor o en la nube para el acceso público.
 - Actualizar el documento del proyecto con la sección "Problemas y cambios" de este informe.

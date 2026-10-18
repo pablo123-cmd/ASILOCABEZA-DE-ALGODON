@@ -12,7 +12,7 @@ from comun.errores import conflicto, datos_invalidos, no_encontrado
 from comun.modelos import (
     Id, Modelo, Monto, Porcentaje, Texto, TextoLargo, TextoOpcional, normalizar
 )
-from comun.repositorio import RepositorioMemoria
+from comun.repositorio import crear_repositorio
 from comun.seguridad import (
     EDITAR_CATALOGOS, EDITAR_ENFERMEROS, EDITAR_FICHA, ENTREGAR_MEDICAMENTOS,
     LEER_CATALOGOS, LEER_COSTOS, LEER_FARMACIA, LEER_FICHA, LEER_LABORATORIO,
@@ -36,12 +36,11 @@ app = crear_servicio(
 # DATOS (en memoria hasta conectar la base de datos)
 # --------------------------------------------------
 
-configuracion = {
-    # Descuento que la fundación da a los internos del asilo.
-    "descuento_pct": 25.0
-}
+# Registro único (id 1) con el descuento que la fundación da a
+# los internos del asilo.
+configuracion = crear_repositorio("configuracion", [{"descuento_pct": 25.0}])
 
-especialidades = RepositorioMemoria([
+especialidades = crear_repositorio("especialidades", [
     {"nombre": "Medicina General", "precio_consulta": 100.0},
     {"nombre": "Cardiología", "precio_consulta": 250.0},
     {"nombre": "Medicina Interna", "precio_consulta": 200.0},
@@ -50,7 +49,7 @@ especialidades = RepositorioMemoria([
     {"nombre": "Traumatología", "precio_consulta": 225.0},
 ])
 
-medicos = RepositorioMemoria([
+medicos = crear_repositorio("medicos", [
     {"nombre": "Dr. Carlos Méndez", "especialidad_id": 1,
      "colegiado": "12345", "telefono": "5555-0001"},
     {"nombre": "Dra. Ana Ruiz", "especialidad_id": 2,
@@ -61,12 +60,12 @@ medicos = RepositorioMemoria([
      "colegiado": "45678", "telefono": "5555-0004"},
 ])
 
-enfermeros = RepositorioMemoria([
+enfermeros = crear_repositorio("enfermeros", [
     {"nombre": "Rosa Hernández", "turno": "Mañana", "telefono": "5555-0101"},
     {"nombre": "Pedro Sic", "turno": "Tarde", "telefono": "5555-0102"},
 ])
 
-tipos_examen = RepositorioMemoria([
+tipos_examen = crear_repositorio("tipos_examen", [
     {"nombre": "Hematología completa", "precio": 75.0},
     {"nombre": "Glucosa en ayunas", "precio": 30.0},
     {"nombre": "Perfil lipídico", "precio": 90.0},
@@ -74,7 +73,7 @@ tipos_examen = RepositorioMemoria([
     {"nombre": "Electrocardiograma", "precio": 150.0},
 ])
 
-medicamentos = RepositorioMemoria([
+medicamentos = crear_repositorio("medicamentos", [
     {"nombre": "Losartán 50 mg", "presentacion": "Tableta",
      "precio_unitario": 2.5, "existencia": 300},
     {"nombre": "Metformina 850 mg", "presentacion": "Tableta",
@@ -85,7 +84,7 @@ medicamentos = RepositorioMemoria([
      "precio_unitario": 1.25, "existencia": 200},
 ])
 
-fichas = RepositorioMemoria([
+fichas = crear_repositorio("fichas", [
     {"paciente_id": 1, "tipo_sangre": "O+", "alergias": "Penicilina",
      "psicopatologia": "Ansiedad leve",
      "enfermedades_cronicas": "Hipertensión arterial",
@@ -93,13 +92,13 @@ fichas = RepositorioMemoria([
      "observaciones": ""},
 ])
 
-visitas = RepositorioMemoria()
-examenes = RepositorioMemoria()
-recetas = RepositorioMemoria()
+visitas = crear_repositorio("visitas")
+examenes = crear_repositorio("examenes")
+recetas = crear_repositorio("recetas")
 
 
 def _con_descuento(precio):
-    descuento = configuracion["descuento_pct"]
+    descuento = configuracion.obtener(1)["descuento_pct"]
     return descuento, round(precio * (1 - descuento / 100), 2)
 
 
@@ -271,7 +270,7 @@ class Configuracion(Modelo):
 
 @app.get("/configuracion", tags=["Configuración"])
 def obtener_configuracion(usuario: dict = Depends(requiere(LEER_CATALOGOS))):
-    return configuracion
+    return {"descuento_pct": configuracion.obtener(1)["descuento_pct"]}
 
 
 @app.put("/configuracion", tags=["Configuración"])
@@ -279,8 +278,8 @@ def actualizar_configuracion(
     datos: Configuracion,
     usuario: dict = Depends(requiere(EDITAR_CATALOGOS))
 ):
-    configuracion.update(datos.model_dump())
-    return {"mensaje": "Configuración actualizada", **configuracion}
+    configuracion.actualizar(1, datos.model_dump())
+    return {"mensaje": "Configuración actualizada", **datos.model_dump()}
 
 
 # --------------------------------------------------

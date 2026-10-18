@@ -7,9 +7,13 @@ dirigen a las aplicaciones en memoria con httpx.ASGITransport.
 """
 
 import importlib
+import os
 
-import httpx
-import pytest
+# Las pruebas no necesitan MySQL: usan los repositorios en memoria.
+os.environ["ASILO_BD"] = "memoria"
+
+import httpx  # noqa: E402
+import pytest  # noqa: E402
 from fastapi.testclient import TestClient
 
 from comun import clientes, config

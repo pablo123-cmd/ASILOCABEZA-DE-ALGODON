@@ -1,11 +1,13 @@
 """
 Inicia todos los servicios del sistema con un solo comando:
 
-    python iniciar.py
+    python iniciar.py            (datos en MySQL)
+    python iniciar.py --memoria  (sin MySQL; los datos se pierden al cerrar)
 
 Presione Ctrl+C para detenerlos.
 """
 
+import os
 import subprocess
 import sys
 import time
@@ -22,7 +24,34 @@ SERVICIOS = [
 CARPETA = Path(__file__).parent
 
 
+def verificar_mysql():
+    """Comprueba la conexión antes de iniciar, con un mensaje claro si falla."""
+
+    from comun import config
+    from comun.repositorio import BaseDeDatosNoDisponible, RepositorioMySQL
+
+    try:
+        RepositorioMySQL("configuracion").obtener(1)
+    except BaseDeDatosNoDisponible as error:
+        print(f"No se pudo conectar a MySQL en {config.MYSQL_HOST}:{config.MYSQL_PUERTO} "
+              f"(base de datos {config.MYSQL_BD}).")
+        print(f"Detalle: {error}")
+        print("Verifique que MySQL esté encendido y que se ejecutó docs/bd/asilo.sql,")
+        print("o use  python iniciar.py --memoria  para probar sin base de datos.")
+        sys.exit(1)
+
+    print(f"Conectado a MySQL ({config.MYSQL_BD}).")
+
+
 def main():
+    if "--memoria" in sys.argv:
+        os.environ["ASILO_BD"] = "memoria"
+        print("Modo memoria: los datos se pierden al detener el sistema.")
+    else:
+        os.environ.setdefault("ASILO_BD", "mysql")
+        if os.environ["ASILO_BD"] == "mysql":
+            verificar_mysql()
+
     procesos = []
 
     for nombre, aplicacion, puerto in SERVICIOS:

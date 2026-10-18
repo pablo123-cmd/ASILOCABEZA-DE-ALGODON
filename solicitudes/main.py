@@ -9,7 +9,7 @@ from comun.config import URL_MEDICO, URL_PACIENTES
 from comun.correo import enviar_correo
 from comun.errores import conflicto, datos_invalidos, no_encontrado
 from comun.modelos import Id, Modelo, Texto, TextoLargo, normalizar
-from comun.repositorio import RepositorioMemoria
+from comun.repositorio import crear_repositorio
 from comun.seguridad import (
     ADMINISTRADOR, ASIGNAR_ENFERMERO, ASIGNAR_MEDICO, CANCELAR_SOLICITUDES,
     CREAR_SOLICITUDES, LEER_SOLICITUDES, SERVICIO, VER_NOTIFICACIONES,
@@ -41,7 +41,7 @@ Estado = Literal["Pendiente", "Asignada", "Atendida", "Cancelada"]
 # DATOS (en memoria hasta conectar la base de datos)
 # ==================================================
 
-solicitudes = RepositorioMemoria([
+solicitudes = crear_repositorio("solicitudes", [
     {
         "paciente_id": 1,
         "paciente": "Juan Pérez",
@@ -77,7 +77,7 @@ solicitudes = RepositorioMemoria([
 ])
 
 # Registro de los correos enviados (o simulados) a los familiares.
-notificaciones = RepositorioMemoria()
+notificaciones = crear_repositorio("notificaciones")
 
 
 # ==================================================

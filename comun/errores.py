@@ -3,6 +3,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from comun.repositorio import BaseDeDatosNoDisponible, RegistroRelacionado
+
 # --------------------------------------------------
 # TRADUCCIÓN DE LOS ERRORES DE VALIDACIÓN
 # FastAPI devuelve los errores en inglés y con formato técnico;
@@ -77,6 +79,20 @@ def configurar_errores(app: FastAPI):
                 "mensaje": "Los datos enviados no son válidos.",
                 "errores": traducir_errores(exc.errors())
             }
+        )
+
+    @app.exception_handler(RegistroRelacionado)
+    async def registro_relacionado(request: Request, exc: RegistroRelacionado):
+        return JSONResponse(
+            status_code=409,
+            content={"mensaje": "No se puede eliminar: otros registros dependen de este."}
+        )
+
+    @app.exception_handler(BaseDeDatosNoDisponible)
+    async def sin_base_de_datos(request: Request, exc: BaseDeDatosNoDisponible):
+        return JSONResponse(
+            status_code=503,
+            content={"mensaje": "La base de datos no está disponible; intente más tarde."}
         )
 
     @app.exception_handler(StarletteHTTPException)

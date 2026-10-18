@@ -8,7 +8,7 @@ from comun.aplicacion import crear_servicio
 from comun.config import EDAD_MAXIMA, EDAD_MINIMA
 from comun.errores import conflicto, no_encontrado
 from comun.modelos import CorreoOpcional, Modelo, Texto, TextoOpcional, normalizar
-from comun.repositorio import RepositorioMemoria
+from comun.repositorio import crear_repositorio
 from comun.seguridad import ADMINISTRADOR, EDITAR_PACIENTES, LEER_PACIENTES, requiere
 
 # --------------------------------------------------
@@ -58,7 +58,7 @@ class PacienteCambios(Modelo):
 # DATOS (en memoria hasta conectar la base de datos)
 # --------------------------------------------------
 
-pacientes = RepositorioMemoria([
+pacientes = crear_repositorio("pacientes", [
     {
         "nombre": "Juan Pérez",
         "edad": 75,

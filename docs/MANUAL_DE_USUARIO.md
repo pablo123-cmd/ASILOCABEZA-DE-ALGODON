@@ -4,7 +4,7 @@ Sistema de Administración del Asilo de Ancianos Cabeza de Algodón.
 
 ## 1. Ingreso al sistema
 
-1. Inicie el sistema (ver *Instalación* en el `README.md`) y abra **http://127.0.0.1:8002**.
+1. Verifique que MySQL esté encendido, inicie el sistema (ver *Instalación* en el `README.md`) y abra **http://127.0.0.1:8002**.
 2. Escriba su **usuario** y **contraseña** y presione **Iniciar sesión**.
 3. El menú principal muestra solo los módulos que su rol puede usar.
 4. Para salir, presione **Cerrar sesión** (arriba a la derecha). La sesión se cierra sola después de 8 horas.
@@ -93,5 +93,5 @@ al menos 8 caracteres. En **Editar** se cambia el nombre, el rol, la contraseña
 | No hay existencia suficiente | La farmacia no tiene la cantidad indicada | Actualice la existencia en *Médicos y catálogos* → Medicamentos |
 | El monto excede el saldo pendiente | El cobro es mayor que lo que se debe | Revise el saldo de la cita |
 
-**Importante:** mientras no se conecte la base de datos, la información registrada se pierde al
-reiniciar el sistema.
+| Base de datos no disponible | MySQL está apagado o sin conexión | Encienda el servicio MySQL de Windows y vuelva a intentar |
+| No se puede eliminar: otros registros dependen de este | El registro tiene historial (solicitudes, visitas, pagos) | No se elimina, para conservar el historial |

@@ -8,7 +8,7 @@ from comun.clientes import obtener_o_none
 from comun.config import URL_MEDICO, URL_PACIENTES
 from comun.errores import conflicto, datos_invalidos, no_encontrado
 from comun.modelos import Id, Mes, Modelo, Monto, Texto, TextoOpcional, en_rango
-from comun.repositorio import RepositorioMemoria
+from comun.repositorio import crear_repositorio
 from comun.seguridad import FINANZAS, requiere
 
 # --------------------------------------------------
@@ -28,7 +28,7 @@ app = crear_servicio(
 # DATOS (en memoria hasta conectar la base de datos)
 # --------------------------------------------------
 
-donaciones = RepositorioMemoria([
+donaciones = crear_repositorio("donaciones", [
     {"tipo_donante": "Empresa nacional", "donante": "Distribuidora La Esperanza",
      "monto": 5000.0, "fecha": "2026-10-01", "descripcion": "Donación mensual",
      "registrado_por": "Datos iniciales"},
@@ -37,21 +37,21 @@ donaciones = RepositorioMemoria([
      "registrado_por": "Datos iniciales"},
 ])
 
-cuotas = RepositorioMemoria([
+cuotas = crear_repositorio("cuotas", [
     {"paciente_id": 1, "paciente": "Juan Pérez", "mes": "2026-10", "monto": 1200.0,
      "fecha": "2026-10-03", "observaciones": "", "registrado_por": "Datos iniciales"},
 ])
 
-cobros = RepositorioMemoria()
+cobros = crear_repositorio("cobros")
 
-gastos = RepositorioMemoria([
+gastos = crear_repositorio("gastos", [
     {"categoria": "Luz", "descripcion": "Factura de energía eléctrica septiembre",
      "monto": 1450.0, "fecha": "2026-10-02", "registrado_por": "Datos iniciales"},
     {"categoria": "Agua", "descripcion": "Servicio de agua septiembre",
      "monto": 320.0, "fecha": "2026-10-02", "registrado_por": "Datos iniciales"},
 ])
 
-pagos_fundacion = RepositorioMemoria()
+pagos_fundacion = crear_repositorio("pagos_fundacion")
 
 # --------------------------------------------------
 # MODELOS

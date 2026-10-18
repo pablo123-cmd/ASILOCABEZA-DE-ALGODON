@@ -43,10 +43,10 @@ usan plantillas Jinja2, que escapan automáticamente el texto del usuario.
 
 ### Datos
 
-> **Pendiente:** los datos se guardan en memoria y se pierden al reiniciar los servicios.
-> Todo el acceso a datos pasa por `RepositorioMemoria`; para conectar la base de datos
-> (MySQL, SQL Server u Oracle) hay que crear un repositorio con los mismos métodos
-> (`listar`, `obtener`, `agregar`, `actualizar`, `eliminar`) y usarlo en lugar del actual.
+Los datos se guardan en **MySQL 8** (base de datos `asilo_cabeza_algodon`, 19 tablas con llaves
+foráneas). El script `docs/bd/asilo.sql` crea la base de datos, el usuario `asilo` que usa el
+sistema y los datos iniciales. Todo el acceso a datos pasa por los repositorios de
+`comun/repositorio.py` (patrón Repository).
 
 ### Seguridad
 
@@ -57,13 +57,33 @@ usan plantillas Jinja2, que escapan automáticamente el texto del usuario.
 
 ## Instalación
 
-Requisitos: Python 3.12 o superior.
+Requisitos: Python 3.12 o superior y MySQL 8.
+
+### 1. Descargar el proyecto e instalar las dependencias
 
 ```powershell
 git clone https://github.com/pablo123-cmd/ASILOCABEZA-DE-ALGODON.git
 cd ASILOCABEZA-DE-ALGODON
 python -m pip install -r requirements.txt
 ```
+
+### 2. Instalar MySQL
+
+1. Descargue **MySQL Installer for Windows** desde https://dev.mysql.com/downloads/installer/.
+2. Elija el tipo de instalación **Server only**.
+3. Deje el puerto **3306** y escriba una contraseña para el usuario `root` (anótela).
+4. Deje marcado que MySQL se inicie como servicio de Windows.
+
+### 3. Crear la base de datos
+
+Desde la carpeta del proyecto, en **cmd** (Símbolo del sistema):
+
+```bat
+"C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -u root -p --default-character-set=utf8mb4 < docs\bd\asilo.sql
+```
+
+Escriba la contraseña de `root`. El script borra la base de datos si ya existe y la crea de
+nuevo con los datos iniciales, así que úselo también para reiniciar los datos de prueba.
 
 ## Ejecución
 
@@ -73,8 +93,11 @@ Desde la carpeta del proyecto:
 python iniciar.py
 ```
 
-Esto inicia los cinco servicios. Abra **http://127.0.0.1:8002** en el navegador.
-Para detenerlos presione `Ctrl+C`.
+Esto revisa la conexión con MySQL e inicia los cinco servicios. Abra
+**http://127.0.0.1:8002** en el navegador. Para detenerlos presione `Ctrl+C`.
+
+Sin MySQL se puede hacer una demostración con `python iniciar.py --memoria`; en ese modo los
+datos se pierden al detener el sistema.
 
 También se puede iniciar cada servicio por separado (siempre desde la carpeta raíz):
 
@@ -108,6 +131,8 @@ en el mismo navegador.
 
 | Variable | Uso |
 |---|---|
+| `MYSQL_HOST`, `MYSQL_PUERTO`, `MYSQL_USUARIO`, `MYSQL_CONTRASENA`, `MYSQL_BD` | Conexión a MySQL. Por defecto `127.0.0.1`, `3306`, `asilo`, `Asilo2026!`, `asilo_cabeza_algodon` (los que crea el script). |
+| `ASILO_BD` | `mysql` (por defecto) o `memoria`. |
 | `ASILO_CLAVE_SECRETA` | Clave con la que se firman las sesiones. **Cámbiela en producción**; debe ser la misma en los cinco servicios. |
 | `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_USUARIO`, `SMTP_CONTRASENA`, `SMTP_REMITENTE` | Servidor de correo para avisar a los familiares. Sin `SMTP_HOST` los correos se registran como «Simulado» en *Correos a familiares*. |
 | `URL_PACIENTES`, `URL_SOLICITUDES`, `URL_MEDICO`, `URL_FINANZAS` | Direcciones de los servicios si no se ejecutan en `127.0.0.1`. |
@@ -118,5 +143,5 @@ en el mismo navegador.
 python -m pytest
 ```
 
-Las pruebas siguen los casos del plan de pruebas SQA (CP-01 a CP-49) y no necesitan
-que los servicios estén encendidos.
+Las pruebas siguen los casos del plan de pruebas SQA (CP-01 a CP-49). Usan los repositorios
+en memoria, así que no necesitan MySQL ni que los servicios estén encendidos.

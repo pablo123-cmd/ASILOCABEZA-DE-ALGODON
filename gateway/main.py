@@ -13,7 +13,7 @@ from comun.config import (
     URL_FINANZAS, URL_MEDICO, URL_PACIENTES, URL_SOLICITUDES
 )
 from comun.modelos import normalizar
-from comun.repositorio import RepositorioMemoria
+from comun.repositorio import BaseDeDatosNoDisponible, crear_repositorio
 from comun import seguridad as seg
 from comun.seguridad import (
     ADMINISTRADOR, cifrar_contrasena, crear_token, tiene_permiso,
@@ -69,7 +69,7 @@ plantillas.env.globals.update(
 # Las contraseñas se guardan cifradas, nunca en texto plano.
 # ==================================================
 
-usuarios = RepositorioMemoria([
+usuarios = crear_repositorio("usuarios", [
     {"usuario": usuario, "nombre": nombre, "rol": rol, "activo": True,
      "contrasena": cifrar_contrasena(contrasena)}
     for usuario, nombre, rol, contrasena in [
@@ -83,7 +83,7 @@ usuarios = RepositorioMemoria([
         ("farmacia", "Farmacia de la Fundación", seg.FARMACIA, "Asilo2026!"),
         ("finanzas", "Lucía Ramírez", seg.FINANCIERO, "Asilo2026!"),
     ]
-])
+], booleanos=("activo",))
 
 LONGITUD_MINIMA_CONTRASENA = 8
 
@@ -192,6 +192,18 @@ async def servicio_caido(request: Request, exc: ServicioNoDisponible):
             f"El servicio de {exc.servicio} no está disponible en este momento. "
             "Puede seguir usando los demás módulos del menú; intente de nuevo "
             "en unos minutos y, si el problema continúa, avise al administrador."
+        )
+    )
+
+
+@app.exception_handler(BaseDeDatosNoDisponible)
+async def base_de_datos_caida(request: Request, exc: BaseDeDatosNoDisponible):
+    return pagina(
+        request, "error.html", 503,
+        titulo="Base de datos no disponible",
+        mensaje=(
+            "No hay conexión con la base de datos. Verifique que MySQL esté "
+            "encendido y vuelva a intentar; si el problema continúa, avise al administrador."
         )
     )
 
