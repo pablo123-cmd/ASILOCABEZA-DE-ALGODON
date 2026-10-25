@@ -111,7 +111,8 @@ class RepositorioMySQL:
                 charset="utf8mb4",
                 cursorclass=pymysql.cursors.DictCursor,
                 autocommit=True,
-                connect_timeout=5
+                connect_timeout=5,
+                ssl={"check_hostname": False} if config.MYSQL_SSL else None
             )
         except pymysql.err.OperationalError as error:
             raise BaseDeDatosNoDisponible(str(error)) from error

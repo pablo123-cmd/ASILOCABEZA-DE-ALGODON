@@ -1,0 +1,32 @@
+# Publicación del sistema en Render (https://render.com).
+# Los cinco servicios corren en un solo servidor con iniciar.py;
+# solo el menú principal queda abierto a internet.
+# La base de datos MySQL está en Aiven (https://aiven.io).
+
+services:
+  - type: web
+    name: asilo-cabeza-algodon
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python iniciar.py
+    healthCheckPath: /login
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: ASILO_BD
+        value: mysql
+      - key: ASILO_CLAVE_SECRETA
+        generateValue: true
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PUERTO
+        sync: false
+      - key: MYSQL_USUARIO
+        sync: false
+      - key: MYSQL_CONTRASENA
+        sync: false
+      - key: MYSQL_BD
+        value: asilo_cabeza_algodon
+      - key: MYSQL_SSL
+        value: "1"

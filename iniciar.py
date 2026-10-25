@@ -52,17 +52,25 @@ def main():
         if os.environ["ASILO_BD"] == "mysql":
             verificar_mysql()
 
+    # En la nube (Render) la variable PORT indica dónde debe escuchar el
+    # menú principal; los demás servicios quedan solo dentro del servidor.
+    puerto_publico = os.getenv("PORT")
     procesos = []
 
     for nombre, aplicacion, puerto in SERVICIOS:
-        print(f"Iniciando {nombre} en http://127.0.0.1:{puerto}")
+        host = "127.0.0.1"
+        if puerto_publico and aplicacion.startswith("gateway"):
+            host, puerto = "0.0.0.0", int(puerto_publico)
+
+        print(f"Iniciando {nombre} en http://{host}:{puerto}")
         procesos.append(subprocess.Popen(
             [sys.executable, "-m", "uvicorn", aplicacion,
-             "--host", "127.0.0.1", "--port", str(puerto)],
+             "--host", host, "--port", str(puerto)],
             cwd=CARPETA
         ))
 
-    print("\nAbra el sistema en: http://127.0.0.1:8002")
+    if not puerto_publico:
+        print("\nAbra el sistema en: http://127.0.0.1:8002")
     print("Presione Ctrl+C para detener todos los servicios.\n")
 
     try:

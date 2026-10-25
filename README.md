@@ -132,10 +132,32 @@ en el mismo navegador.
 | Variable | Uso |
 |---|---|
 | `MYSQL_HOST`, `MYSQL_PUERTO`, `MYSQL_USUARIO`, `MYSQL_CONTRASENA`, `MYSQL_BD` | Conexión a MySQL. Por defecto `127.0.0.1`, `3306`, `asilo`, `Asilo2026!`, `asilo_cabeza_algodon` (los que crea el script). |
+| `MYSQL_SSL` | `1` para cifrar la conexión (necesario en Aiven y otras bases en la nube). |
+| `PORT` | Puerto público del menú principal; lo pone Render. Sin él, todo escucha en `127.0.0.1`. |
 | `ASILO_BD` | `mysql` (por defecto) o `memoria`. |
 | `ASILO_CLAVE_SECRETA` | Clave con la que se firman las sesiones. **Cámbiela en producción**; debe ser la misma en los cinco servicios. |
 | `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_USUARIO`, `SMTP_CONTRASENA`, `SMTP_REMITENTE` | Servidor de correo para avisar a los familiares. Sin `SMTP_HOST` los correos se registran como «Simulado» en *Correos a familiares*. |
 | `URL_PACIENTES`, `URL_SOLICITUDES`, `URL_MEDICO`, `URL_FINANZAS` | Direcciones de los servicios si no se ejecutan en `127.0.0.1`. |
+
+## Publicación en la nube
+
+El sistema se publica gratis con **Aiven** (base de datos MySQL) y **Render** (servidor).
+
+1. En [aiven.io](https://aiven.io) cree un servicio **MySQL** del plan gratuito y anote
+   *Host*, *Port*, *User* (`avnadmin`) y *Password*.
+2. Cargue la base de datos desde su computadora:
+
+   ```powershell
+   & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -h <host> -P <port> -u avnadmin -p --ssl-mode=REQUIRED --default-character-set=utf8mb4 < docs/bd/asilo.sql
+   ```
+
+3. En [render.com](https://render.com) elija **New → Blueprint** y conecte este repositorio.
+   Render lee `render.yaml` y pide `MYSQL_HOST`, `MYSQL_PUERTO`, `MYSQL_USUARIO` y
+   `MYSQL_CONTRASENA`: escriba los datos de Aiven.
+4. Al terminar, Render muestra la dirección pública (`https://….onrender.com`).
+
+En el plan gratuito Render apaga el servidor tras 15 minutos sin visitas; la primera visita
+después tarda cerca de un minuto en abrir.
 
 ## Pruebas automáticas
 

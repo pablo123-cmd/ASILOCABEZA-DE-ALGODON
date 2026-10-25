@@ -47,6 +47,9 @@ MYSQL_USUARIO = os.getenv("MYSQL_USUARIO", "asilo")
 MYSQL_CONTRASENA = os.getenv("MYSQL_CONTRASENA", "Asilo2026!")
 MYSQL_BD = os.getenv("MYSQL_BD", "asilo_cabeza_algodon")
 
+# MYSQL_SSL = "1" cifra la conexión (lo exigen las bases de datos en la nube).
+MYSQL_SSL = os.getenv("MYSQL_SSL", "0") == "1"
+
 # --------------------------------------------------
 # REGLAS DE NEGOCIO
 # --------------------------------------------------
