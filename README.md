@@ -4,7 +4,7 @@ Sistema para gestionar a los internos del asilo, su atención médica con la fun
 (solicitudes, visitas, laboratorio y farmacia) y las finanzas (cuentas, cobros, cuotas,
 donaciones, gastos y pagos a la fundación).
 
-Proyecto final de Análisis y Diseño de Sistemas II — Universidad Mariano Gálvez, sede Mazatenango.
+Proyecto final de Análisis de datos — Universidad Mariano Gálvez, sede Mazatenango.
 
 ## Arquitectura
 
