@@ -126,6 +126,15 @@ def test_cp44_costos_y_cuentas_pendientes(api, visita):
     assert cuenta["visitas"][0]["estado"] == "Pagada"
 
 
+def test_def17_visitas_de_todos_los_pacientes_en_una_consulta(api, visita):
+    cuentas = api(URL_FINANZAS, FINANCIERO).get("/cuentas/visitas").json()
+    por_paciente = {c["paciente_id"]: c for c in cuentas}
+
+    assert por_paciente[2]["visitas"][0]["total"] == 150.0
+    assert por_paciente[2]["visitas"][0]["estado"] == "Pendiente de pago"
+    assert por_paciente[1]["visitas"] == []
+
+
 def test_cp45_donaciones_cuotas_gastos_y_pagos(api, visita):
     finanzas = api(URL_FINANZAS, FINANCIERO)
 

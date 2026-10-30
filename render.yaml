@@ -30,3 +30,15 @@ services:
         value: asilo_cabeza_algodon
       - key: MYSQL_SSL
         value: "1"
+      # Correo a los familiares (DEF-18). Sin SMTP_HOST los avisos
+      # quedan como «Simulado»; los valores se llenan en Render.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PUERTO
+        value: "587"
+      - key: SMTP_USUARIO
+        sync: false
+      - key: SMTP_CONTRASENA
+        sync: false
+      - key: SMTP_REMITENTE
+        sync: false

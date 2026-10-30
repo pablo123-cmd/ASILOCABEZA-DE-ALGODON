@@ -28,6 +28,8 @@ documentación del proyecto.
 | DEF-14 | Baja | CP-11 | Corregido | Se rechaza un paciente con el mismo nombre (sin distinguir mayúsculas, espacios ni acentos), con código 409. |
 | DEF-15 | Baja | CP-08 | Corregido | Los errores de validación se devuelven en español, indicando el campo y el problema. |
 | DEF-16 | Baja | CP-16 | Corregido | Un registro inexistente responde 404 en todos los servicios. |
+| DEF-17 | Media | CP-39 | Corregido | El reporte «Costos de cada cita por paciente» obtiene las cuentas de todos los pacientes en una sola consulta (`GET /cuentas/visitas`) en lugar de una por paciente. |
+| DEF-18 | Baja | CP-44 | Corregido | Al crear una solicitud, el mensaje muestra el estado real del aviso (enviado, simulado, sin correo o error). Se agregaron las variables `SMTP_*` en render.yaml. |
 
 ### Notas para la nueva ronda de pruebas
 

@@ -241,6 +241,28 @@ async def listar_cuentas(usuario: dict = Depends(requiere(FINANZAS))):
     return resultado
 
 
+@app.get("/cuentas/visitas", tags=["Cuentas"])
+async def visitas_de_todos(usuario: dict = Depends(requiere(FINANZAS))):
+    """
+    Visitas con sus cargos de todos los pacientes en una sola consulta,
+    para el reporte de costos por cita (DEF-17: antes se pedía la
+    cuenta de cada paciente una por una).
+    """
+
+    respuesta = await obtener_o_none(URL_PACIENTES, "/pacientes")
+    cargos = await _cargos()
+    pagos = cobros.listar()
+
+    return [{
+        "paciente_id": paciente["id"],
+        "paciente": paciente["nombre"],
+        "visitas": _estado_por_visita(
+            [c for c in cargos if c["paciente_id"] == paciente["id"]],
+            [p for p in pagos if p["paciente_id"] == paciente["id"]]
+        )
+    } for paciente in respuesta["pacientes"]]
+
+
 @app.get("/cuentas/{paciente_id}", tags=["Cuentas"])
 async def estado_de_cuenta(
     paciente_id: int,

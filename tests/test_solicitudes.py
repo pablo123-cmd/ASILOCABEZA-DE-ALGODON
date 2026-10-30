@@ -131,6 +131,12 @@ def test_cp47_correo_al_familiar_al_crear_solicitud(api):
     assert correos[0]["estado"].startswith("Simulado")
 
 
+def test_def18_respuesta_indica_el_estado_real_del_aviso(api):
+    respuesta = api(URL_SOLICITUDES, MEDICO_GENERAL).post("/solicitudes", json=NUEVA)
+
+    assert respuesta.json()["aviso"].startswith("Simulado")
+
+
 def test_solicitud_404(api):
     assert api(URL_SOLICITUDES, FUNDACION).get("/solicitudes/999").status_code == 404
 

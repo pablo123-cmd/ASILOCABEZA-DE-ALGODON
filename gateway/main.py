@@ -549,6 +549,17 @@ async def _form_solicitud(request, valores, errores, codigo=200, error=""):
     )
 
 
+def _mensaje_aviso(estado):
+    # DEF-18: mostrar el estado real del correo, no siempre "enviado".
+    if estado == "Enviado":
+        return "Aviso enviado al familiar."
+    if estado.startswith("Simulado"):
+        return "El aviso al familiar quedó simulado: el servidor de correo no está configurado."
+    if estado.startswith("No enviado"):
+        return "No se envió aviso: el paciente no tiene correo de familiar registrado."
+    return f"No se pudo enviar el aviso al familiar ({estado})."
+
+
 @app.get("/solicitudes/nueva", response_class=HTMLResponse)
 async def nueva_solicitud(
     request: Request, paciente_id: str = "",
@@ -565,10 +576,10 @@ async def crear_solicitud(
     respuesta = await api(request, "POST", URL_SOLICITUDES, "/solicitudes", json=valores)
 
     if respuesta.status_code == 201:
-        solicitud = respuesta.json()["solicitud"]
+        cuerpo = respuesta.json()
         return redirigir(
-            f"/solicitudes/{solicitud['id']}",
-            "Solicitud creada correctamente y aviso enviado al familiar."
+            f"/solicitudes/{cuerpo['solicitud']['id']}",
+            f"Solicitud creada correctamente. {_mensaje_aviso(cuerpo.get('aviso', ''))}"
         )
 
     mensaje, errores = _errores(respuesta)
@@ -1164,13 +1175,12 @@ def _fecha_en_rango(fecha, desde, hasta):
 
 async def _reporte_costos_por_cita(request, paciente_id, desde, hasta):
     secciones = []
-    pacientes = await _pacientes(request)
+    cuentas = await datos(request, URL_FINANZAS, "/cuentas/visitas")
 
-    for paciente in pacientes:
-        if paciente_id and str(paciente["id"]) != paciente_id:
+    for cuenta in cuentas:
+        if paciente_id and str(cuenta["paciente_id"]) != paciente_id:
             continue
 
-        cuenta = await datos(request, URL_FINANZAS, f"/cuentas/{paciente['id']}")
         for visita in cuenta["visitas"]:
             if not _fecha_en_rango(visita["fecha"], desde, hasta):
                 continue
@@ -1178,7 +1188,7 @@ async def _reporte_costos_por_cita(request, paciente_id, desde, hasta):
                       _formato_moneda(c["precio_regular"]), f"{c['descuento_pct']:g} %",
                       _formato_moneda(c["monto"])] for c in visita["cargos"]]
             secciones.append(_seccion(
-                f"{paciente['nombre']} — visita #{visita['visita_id']} "
+                f"{cuenta['paciente']} — visita #{visita['visita_id']} "
                 f"({_formato_fecha(visita['fecha'])}) — {visita['estado']}",
                 ["Tipo", "Detalle", "Fecha", "Precio regular", "Descuento", "Costo"],
                 filas, _formato_moneda(visita["total"])

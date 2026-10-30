@@ -301,3 +301,25 @@ def test_pagina_inexistente(gateway):
 
     assert respuesta.status_code == 404
     assert "Página no encontrada" in respuesta.text
+
+
+# ---------- Defectos de la ronda final (25/10) ----------
+
+def test_def18_mensaje_no_dice_enviado_si_el_correo_fue_simulado(gateway):
+    entrar(gateway, "medico")
+
+    respuesta = gateway.post("/solicitudes/nueva", data={
+        "paciente_id": "1", "especialidad": "Cardiología", "motivo": "Control"
+    })
+    pagina = gateway.get(respuesta.headers["location"]).text
+
+    assert "aviso enviado al familiar" not in pagina.lower()
+    assert "quedó simulado" in pagina
+
+
+def test_def17_reporte_de_costos_por_cita(gateway):
+    entrar(gateway, "finanzas")
+
+    respuesta = gateway.get("/reportes/costos-por-cita")
+
+    assert respuesta.status_code == 200

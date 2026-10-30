@@ -177,6 +177,8 @@ async def _notificar_familiar(solicitud, asunto, cuerpo):
         "fecha": datetime.now().isoformat(timespec="minutes")
     })
 
+    return estado
+
 
 # ==================================================
 # GET - LISTAR SOLICITUDES
@@ -245,7 +247,7 @@ async def crear_solicitud(
         "creada_por": usuario["nombre"]
     })
 
-    await _notificar_familiar(
+    aviso = await _notificar_familiar(
         solicitud,
         f"Solicitud médica para {paciente['nombre']}",
         f"Le informamos que {paciente['nombre']} fue evaluado(a) por el médico "
@@ -258,7 +260,8 @@ async def crear_solicitud(
 
     return {
         "mensaje": "Solicitud creada correctamente",
-        "solicitud": solicitud
+        "solicitud": solicitud,
+        "aviso": aviso
     }
 
 
